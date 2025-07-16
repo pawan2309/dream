@@ -1,0 +1,109 @@
+// apps/backend/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  username   String   @unique
+  name       String?  // Add this line
+  password   String
+  role       Role
+  parentId   String?  // who created this user
+  parent     User?    @relation("UserHierarchy", fields: [parentId], references: [id])
+  children   User[]   @relation("UserHierarchy")
+  balance    Float    @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Additional fields from user creation form
+  code       String?  // Auto-generated code
+  reference  String?  // Reference field
+  contactno  String?  // Contact number
+  
+  // Share fields
+  share      Float    @default(0)  // Sub Agent Share
+  cshare     Float    @default(0)  // Sub Casino Agent Share
+  icshare    Float    @default(0)  // Sub Int. Casino Share
+  mobileshare Float   @default(100) // Sub Agent Mobile Share
+  
+  // Commission fields
+  session_commission_type String @default("No Comm") // Commission Type: "No Comm" or "Bet by Bet"
+  matchcommission    Float @default(0)  // Match Commission
+  sessioncommission  Float @default(0)  // Session Commission
+  casinocommission   Float @default(0)  // Casino Commission
+
+  ledger     Ledger[]
+  bets       Bet[]
+}
+
+model Ledger {
+  id           String   @id @default(uuid())
+  user         User     @relation(fields: [userId], references: [id])
+  userId       String
+  collection   String
+  debit        Float    @default(0)
+  credit       Float    @default(0)
+  balanceAfter Float
+  type         LedgerType
+  remark       String?
+  createdAt    DateTime @default(now())
+}
+
+model Match {
+  id          String       @id @default(uuid())
+  title       String
+  externalId  String       @unique
+  status      MatchStatus  @default(UPCOMING)
+  createdAt   DateTime     @default(now())
+  bets        Bet[]
+}
+
+model Bet {
+  id           String     @id @default(uuid())
+  user         User       @relation(fields: [userId], references: [id])
+  userId       String
+  match        Match      @relation(fields: [matchId], references: [id])
+  matchId      String
+  odds         Float
+  stake        Float
+  potentialWin Float
+  status       BetStatus  @default(PENDING)
+  createdAt    DateTime   @default(now())
+}
+
+enum Role {
+  BOSS
+  SUB
+  MASTER
+  SUPER_AGENT
+  AGENT
+  USER
+}
+
+enum LedgerType {
+  DEPOSIT
+  WITHDRAWAL
+  WIN
+  LOSS
+  ADJUSTMENT
+}
+
+enum MatchStatus {
+  UPCOMING
+  LIVE
+  CLOSED
+}
+
+enum BetStatus {
+  PENDING
+  WON
+  LOST
+}
