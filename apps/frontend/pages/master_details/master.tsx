@@ -12,41 +12,12 @@ export const getServerSideProps = async () => {
   return { props: {} };
 };
 
-// Mock data for when API fails
-const mockMasters = [
-  {
-    id: 'master001',
-    code: 'MASTER001',
-    name: 'John Master',
-    contactno: '9876543210',
-    role: 'MASTER',
-    createdAt: new Date(),
-  },
-  {
-    id: 'master002',
-    code: 'MASTER002',
-    name: 'Jane Master',
-    contactno: '9876543211',
-    role: 'MASTER',
-    createdAt: new Date(),
-  },
-  {
-    id: 'master003',
-    code: 'MASTER003',
-    name: 'Bob Master',
-    contactno: '9876543212',
-    role: 'MASTER',
-    createdAt: new Date(),
-  },
-];
-
 const MasterPage = () => {
   const [siteName, setSiteName] = useState('');
   const [brandName, setBrandName] = useState('');
   const [masters, setMasters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [useMockData, setUseMockData] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -67,16 +38,11 @@ const MasterPage = () => {
         const data = await res.json();
         if (res.ok) {
           setMasters(data.users || []);
-          setUseMockData(false);
         } else {
-          console.warn('API failed, using mock data:', data.error);
-          setMasters(mockMasters);
-          setUseMockData(true);
+          setError(data.error || 'Failed to fetch masters');
         }
       } catch (err) {
-        console.warn('Network error, using mock data:', err);
-        setMasters(mockMasters);
-        setUseMockData(true);
+        setError('Network error');
       } finally {
         setLoading(false);
       }
@@ -109,13 +75,6 @@ const MasterPage = () => {
       
       <section className="content">
         <div className="container-fluid">
-          {useMockData && (
-            <div className="alert alert-warning alert-dismissible">
-              <button type="button" className="close" data-dismiss="alert" aria-hidden="true">×</button>
-              <h5><i className="icon fas fa-exclamation-triangle"></i> Warning!</h5>
-              Showing mock data due to API connection issues. Database connection will be restored soon.
-            </div>
-          )}
           
           <div className="row">
             <div className="col-12">

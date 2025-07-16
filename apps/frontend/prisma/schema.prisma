@@ -19,6 +19,8 @@ model User {
   parent     User?    @relation("UserHierarchy", fields: [parentId], references: [id])
   children   User[]   @relation("UserHierarchy")
   balance    Float    @default(0)
+  creditLimit Float   @default(0) // Maximum allowed exposure
+  exposure   Float    @default(0) // Amount at risk in ongoing bets
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -42,6 +44,7 @@ model User {
 
   ledger     Ledger[]
   bets       Bet[]
+  profitDistributions ProfitDistribution[]
 }
 
 model Ledger {
@@ -53,6 +56,8 @@ model Ledger {
   credit       Float    @default(0)
   balanceAfter Float
   type         LedgerType
+  transactionType String? // e.g. BET, PROFIT_SHARE, MANUAL_ADJUST
+  referenceId  String?   // e.g. bet id or related transaction
   remark       String?
   createdAt    DateTime @default(now())
 }
@@ -77,6 +82,18 @@ model Bet {
   potentialWin Float
   status       BetStatus  @default(PENDING)
   createdAt    DateTime   @default(now())
+  profitDistributions ProfitDistribution[]
+}
+
+model ProfitDistribution {
+  id            String   @id @default(uuid())
+  bet           Bet      @relation(fields: [betId], references: [id])
+  betId         String
+  user          User     @relation(fields: [userId], references: [id])
+  userId        String
+  profitShare   Float    // Percentage share for this user
+  amountEarned  Float    // Amount earned from this bet
+  createdAt     DateTime @default(now())
 }
 
 enum Role {

@@ -45,11 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           name: true,
           role: true,
           balance: true,
+          creditLimit: true,
           isActive: true,
           createdAt: true,
           code: true,
           contactno: true
-        },
+        } as any,
         orderBy: { createdAt: 'desc' }
       });
       return res.status(200).json({ success: true, users });
@@ -92,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         select: { username: true, code: true } 
       });
       const existingUsernames = existingUsers.map((u: { username: string }) => u.username);
-      const existingCodes = existingUsers.map((u: { code: string }) => u.code).filter(Boolean);
+      const existingCodes = existingUsers.map((u: { code: string | null }) => u.code).filter((code): code is string => code !== null);
 
       // Generate unique code (and use as username)
       const code = generateCode(role, existingCodes);

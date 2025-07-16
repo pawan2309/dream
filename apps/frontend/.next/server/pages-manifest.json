@@ -2,8 +2,9 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/login": "pages/login.js",
-  "/api/users": "pages/api/users.js",
+  "/": "pages/index.js",
+  "/master/limit": "pages/master/limit.js",
   "/master_details/sub": "pages/master_details/sub.js",
-  "/user/create": "pages/user/create.js"
+  "/api/users": "pages/api/users.js",
+  "/api/users/update-status": "pages/api/users/update-status.js"
 }
