@@ -1,5 +1,14 @@
 @tailwind base; @tailwind components; @tailwind utilities; 
 
+/* Prevent page refreshes and ensure smooth navigation */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
 /* Sticky footer styles */
 html, body, #__next, .wrapper {
   height: 100%;
@@ -24,3 +33,239 @@ html, body, #__next, .wrapper {
   background: #fff;
   z-index: 10;
 } 
+
+/* Navigation styles for smooth transitions */
+.nav-link {
+  transition: all 0.3s ease;
+}
+
+.nav-link:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.nav-link.active {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+/* Prevent default link behavior */
+a[href="#"] {
+  cursor: pointer;
+}
+
+/* Smooth sidebar transitions */
+.main-sidebar {
+  transition: transform 0.3s ease-in-out;
+}
+
+.sidebar-collapse .main-sidebar {
+  transform: translateX(-250px);
+}
+
+/* Fixed navbar styles - Override AdminLTE */
+.main-header,
+.navbar.main-header,
+.main-header.navbar,
+.wrapper .main-header,
+.hold-transition .main-header,
+.sidebar-mini .main-header,
+nav.main-header,
+.main-header.navbar-expand,
+.navbar-expand .main-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1030 !important;
+  transition: none !important;
+  transform: none !important;
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Force all navbar elements to stay fixed */
+.main-header *,
+.navbar.main-header *,
+.main-header.navbar * {
+  position: relative !important;
+}
+
+/* Prevent any AdminLTE navbar positioning */
+body .main-header,
+html .main-header,
+#__next .main-header,
+.wrapper > .main-header,
+#fixed-navbar,
+nav#fixed-navbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1030 !important;
+  transform: none !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+/* Use CSS custom properties for extra enforcement */
+#fixed-navbar {
+  position: fixed !important;
+  top: var(--navbar-top, 0px) !important;
+  z-index: var(--navbar-z-index, 1030) !important;
+}
+
+/* Override any AdminLTE transforms or transitions */
+.main-header,
+#fixed-navbar {
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Adjust content wrapper to account for fixed navbar */
+.content-wrapper {
+  margin-top: 60px;
+  min-height: calc(100vh - 60px);
+}
+
+/* Ensure smooth scrolling without jumping */
+html {
+  scroll-behavior: auto !important;
+  scroll-padding-top: 60px;
+}
+
+body {
+  overflow-x: hidden;
+  scroll-behavior: auto !important;
+}
+
+/* Prevent AdminLTE from resetting scroll */
+.wrapper {
+  scroll-behavior: auto !important;
+}
+
+/* Override any AdminLTE scroll behavior */
+* {
+  scroll-behavior: auto !important;
+}
+
+/* Prevent any automatic scrolling */
+html, body {
+  scroll-behavior: auto !important;
+  scroll-padding-top: 0 !important;
+}
+
+/* Disable smooth scrolling globally */
+* {
+  scroll-behavior: auto !important;
+}
+
+/* Force instant scroll behavior */
+html {
+  scroll-behavior: auto !important;
+}
+
+body {
+  scroll-behavior: auto !important;
+}
+
+/* Prevent AdminLTE from auto-scrolling */
+.wrapper,
+.content-wrapper,
+.main-content {
+  scroll-behavior: auto !important;
+}
+
+/* Force navbar to stay fixed regardless of AdminLTE */
+.main-header,
+.navbar.main-header,
+.main-header.navbar,
+.wrapper .main-header,
+.hold-transition .main-header,
+.sidebar-mini .main-header {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 1030 !important;
+  transform: none !important;
+  transition: none !important;
+  background: white !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Ensure content doesn't jump */
+.content-wrapper {
+  margin-top: 60px !important;
+  padding-top: 0 !important;
+  min-height: calc(100vh - 60px) !important;
+}
+
+/* Prevent content from jumping when navbar is fixed */
+.wrapper {
+  padding-top: 0 !important;
+}
+
+/* Ensure proper spacing for fixed navbar */
+body {
+  padding-top: 0 !important;
+}
+
+/* Force navbar to always be visible */
+.main-header {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Prevent navbar from resetting position */
+.wrapper {
+  padding-top: 0;
+}
+
+/* Ensure sidebar stays in position */
+.main-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 1031;
+}
+
+/* Adjust content area for fixed sidebar */
+.content-wrapper {
+  margin-left: 250px;
+  transition: margin-left 0.3s ease-in-out;
+}
+
+.sidebar-collapse .content-wrapper {
+  margin-left: 0;
+}
+
+/* Compact sidebar styles */
+.nav-sidebar .nav-item .nav-link {
+  padding: 8px 15px !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+.nav-sidebar .nav-item .nav-link .nav-icon {
+  font-size: 12px !important;
+  margin-right: 8px !important;
+}
+
+.nav-sidebar .nav-item .nav-link p {
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+.nav-header {
+  padding: 8px 15px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #6c757d !important;
+  background-color: #f8f9fa !important;
+  border-bottom: 1px solid #dee2e6 !important;
+}

@@ -5,7 +5,21 @@ const nextConfig = {
   env: {
     PORT: "3000",
   },
-  // Remove rewrites as they might be causing issues
+  // Disable Next.js automatic scroll restoration
+  experimental: {
+    scrollRestoration: false,
+  },
+  // Reduce reload frequency
+  webpack: (config, { dev, isServer }) => {
+    if (dev && !isServer) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+        ignored: ['**/node_modules/**', '**/.prisma/**', '**/prisma/migrations/**'],
+      };
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig; 

@@ -8,6 +8,22 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const SESSION_COOKIE = 'betx_session';
 const SESSION_DURATION = 60 * 60; // 1 hour
 
+// Helper function to detect device type
+function getDeviceType(userAgent: string): string {
+  if (!userAgent) return 'unknown';
+  
+  const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+  const tabletRegex = /iPad|Android(?=.*\bMobile\b)(?=.*\bSafari\b)/i;
+  
+  if (tabletRegex.test(userAgent)) {
+    return 'tablet';
+  } else if (mobileRegex.test(userAgent)) {
+    return 'mobile';
+  } else {
+    return 'desktop';
+  }
+}
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('Login API called with method:', req.method);
 
@@ -69,6 +85,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       JWT_SECRET,
       { expiresIn: SESSION_DURATION }
     );
+
+    // Create login session
+    try {
+      console.log('Creating login session...');
+      
+      // Close any existing active sessions for this user
+      await prisma.loginSession.updateMany({
+        where: {
+          userId: user.id,
+          isActive: true,
+        },
+        data: {
+          isActive: false,
+          logoutAt: new Date(),
+        },
+      });
+
+      // Create new login session
+      const loginSession = await prisma.loginSession.create({
+        data: {
+          userId: user.id,
+          ipAddress: req.headers['x-forwarded-for'] as string || req.socket.remoteAddress,
+          userAgent: req.headers['user-agent'],
+          deviceType: getDeviceType(req.headers['user-agent'] as string),
+          isActive: true,
+        },
+      });
+
+      console.log('Login session created:', loginSession.id);
+    } catch (sessionError) {
+      console.error('Error creating login session:', sessionError);
+      // Don't fail the login if session creation fails
+    }
 
     console.log('JWT token created, setting cookie...');
     res.setHeader('Set-Cookie', serialize(SESSION_COOKIE, token, {

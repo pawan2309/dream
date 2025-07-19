@@ -1,5 +1,3 @@
-// apps/backend/prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,90 +8,103 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  username   String   @unique
-  name       String?  // Add this line
-  password   String
-  role       Role
-  parentId   String?  // who created this user
-  parent     User?    @relation("UserHierarchy", fields: [parentId], references: [id])
-  children   User[]   @relation("UserHierarchy")
-  balance    Float    @default(0)
-  creditLimit Float   @default(0) // Maximum allowed exposure
-  exposure   Float    @default(0) // Amount at risk in ongoing bets
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  // Additional fields from user creation form
-  code       String?  // Auto-generated code
-  reference  String?  // Reference field
-  contactno  String?  // Contact number
-  
-  // Share fields
-  share      Float    @default(0)  // Sub Agent Share
-  cshare     Float    @default(0)  // Sub Casino Agent Share
-  icshare    Float    @default(0)  // Sub Int. Casino Share
-  mobileshare Float   @default(100) // Sub Agent Mobile Share
-  
-  // Commission fields
-  session_commission_type String @default("No Comm") // Commission Type: "No Comm" or "Bet by Bet"
-  matchcommission    Float @default(0)  // Match Commission
-  sessioncommission  Float @default(0)  // Session Commission
-  casinocommission   Float @default(0)  // Casino Commission
-
-  ledger     Ledger[]
-  bets       Bet[]
-  profitDistributions ProfitDistribution[]
+  id                      String               @id @default(uuid())
+  username                String               @unique
+  password                String
+  role                    Role
+  parentId                String?
+  balance                 Float                @default(0)
+  isActive                Boolean              @default(true)
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @updatedAt
+  name                    String?
+  casinocommission        Float                @default(0)
+  code                    String?
+  contactno               String?
+  cshare                  Float                @default(0)
+  icshare                 Float                @default(0)
+  matchcommission         Float                @default(0)
+  mobileshare             Float                @default(100)
+  reference               String?
+  session_commission_type String               @default("No Comm")
+  sessioncommission       Float                @default(0)
+  share                   Float                @default(0)
+  creditLimit             Float                @default(0)
+  exposure                Float                @default(0)
+  bets                    Bet[]
+  ledger                  Ledger[]
+  loginSessions           LoginSession[]
+  profitDistributions     ProfitDistribution[]
+  parent                  User?                @relation("UserHierarchy", fields: [parentId], references: [id])
+  children                User[]               @relation("UserHierarchy")
 }
 
 model Ledger {
-  id           String   @id @default(uuid())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       String
-  collection   String
-  debit        Float    @default(0)
-  credit       Float    @default(0)
-  balanceAfter Float
-  type         LedgerType
-  transactionType String? // e.g. BET, PROFIT_SHARE, MANUAL_ADJUST
-  referenceId  String?   // e.g. bet id or related transaction
-  remark       String?
-  createdAt    DateTime @default(now())
+  id              String     @id @default(uuid())
+  userId          String
+  collection      String
+  debit           Float      @default(0)
+  credit          Float      @default(0)
+  balanceAfter    Float
+  type            LedgerType
+  remark          String?
+  createdAt       DateTime   @default(now())
+  referenceId     String?
+  transactionType String?
+  user            User       @relation(fields: [userId], references: [id])
 }
 
 model Match {
-  id          String       @id @default(uuid())
-  title       String
-  externalId  String       @unique
-  status      MatchStatus  @default(UPCOMING)
-  createdAt   DateTime     @default(now())
-  bets        Bet[]
+  id         String      @id @default(uuid())
+  title      String
+  externalId String      @unique
+  status     MatchStatus @default(UPCOMING)
+  createdAt  DateTime    @default(now())
+  bets       Bet[]
 }
 
 model Bet {
-  id           String     @id @default(uuid())
-  user         User       @relation(fields: [userId], references: [id])
-  userId       String
-  match        Match      @relation(fields: [matchId], references: [id])
-  matchId      String
-  odds         Float
-  stake        Float
-  potentialWin Float
-  status       BetStatus  @default(PENDING)
-  createdAt    DateTime   @default(now())
+  id                  String               @id @default(uuid())
+  userId              String
+  matchId             String
+  odds                Float
+  stake               Float
+  potentialWin        Float
+  status              BetStatus            @default(PENDING)
+  createdAt           DateTime             @default(now())
+  match               Match                @relation(fields: [matchId], references: [id])
+  user                User                 @relation(fields: [userId], references: [id])
   profitDistributions ProfitDistribution[]
 }
 
 model ProfitDistribution {
-  id            String   @id @default(uuid())
-  bet           Bet      @relation(fields: [betId], references: [id])
-  betId         String
-  user          User     @relation(fields: [userId], references: [id])
-  userId        String
-  profitShare   Float    // Percentage share for this user
-  amountEarned  Float    // Amount earned from this bet
-  createdAt     DateTime @default(now())
+  id           String   @id @default(uuid())
+  betId        String
+  userId       String
+  profitShare  Float
+  amountEarned Float
+  createdAt    DateTime @default(now())
+  bet          Bet      @relation(fields: [betId], references: [id])
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model LoginSession {
+  id              String    @id @default(uuid())
+  userId          String
+  loginAt         DateTime  @default(now())
+  logoutAt        DateTime?
+  ipAddress       String?
+  userAgent       String?
+  deviceType      String?
+  location        String?
+  sessionDuration Int?
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  user            User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([loginAt])
+  @@index([isActive])
 }
 
 enum Role {

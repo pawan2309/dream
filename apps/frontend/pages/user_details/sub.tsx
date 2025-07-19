@@ -169,7 +169,7 @@ export default function SubAgentPage() {
         break;
       case 'superAgentLimit':
         // Navigate to super agent limit page
-        window.location.href = `/master/limit?userId=${user.id}`;
+        window.location.href = `/user_details/limit?userId=${user.id}`;
         break;
       case 'sendSMS':
         alert(`Send SMS login details to: ${user.contactno}`);
@@ -313,7 +313,7 @@ export default function SubAgentPage() {
                       >
                         {deactivating ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fa fa-ban"></i> DeActivate</>}
                       </button>
-                      <a href="/master/limit" className="btn btn-primary">
+                      <a href="/user_details/limit" className="btn btn-primary">
                         Limit Update
                       </a>
                     </div>
@@ -425,6 +425,12 @@ export default function SubAgentPage() {
                                         onClick={(e) => handleDropdownAction('superAgentLimit', user, e)}
                                       >
                                         SuperAgent Limit
+                                      </button>
+                                      <button 
+                                        className="dropdown-item" 
+                                        onClick={(e) => handleDropdownAction('limitUpdate', user, e)}
+                                      >
+                                        Limit Update
                                       </button>
                                       <button 
                                         className="dropdown-item" 

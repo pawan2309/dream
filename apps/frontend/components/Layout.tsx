@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 // ===================== Sidebar Navigation Links =====================
 const sidebarLinks = [
   {
     section: 'USER DETAILS',
     links: [
-      { label: 'Collection Master', href: '/master_details/collection', icon: 'fas fa-coins' },
-      { label: 'Sub Agent Master', href: '/master_details/sub', icon: 'fas fa-user-secret' },
-      { label: 'MasterAgent Master', href: '/master_details/master', icon: 'fas fa-crown' },
-      { label: 'SuperAgent Master', href: '/master_details/super', icon: 'fas fa-user-tie' },
-      { label: 'Agent Master', href: '/master_details/agent', icon: 'fas fa-user-shield' },
-      { label: 'Client Master', href: '/master_details/client', icon: 'fas fa-user' },
+      { label: 'Collection Master', href: '/user_details/collection', icon: 'fas fa-coins' },
+      { label: 'Sub Agent Master', href: '/user_details/sub', icon: 'fas fa-user-secret' },
+      { label: 'MasterAgent Master', href: '/user_details/master', icon: 'fas fa-crown' },
+      { label: 'SuperAgent Master', href: '/user_details/super', icon: 'fas fa-user-tie' },
+      { label: 'Agent Master', href: '/user_details/agent', icon: 'fas fa-user-shield' },
+      { label: 'Client Master', href: '/user_details/client', icon: 'fas fa-user' },
     ],
   },
   {
@@ -32,10 +33,11 @@ const sidebarLinks = [
   {
     section: 'CASH TRANSACTION',
     links: [
-      { label: 'Debit/Credit Entry (C)', href: '/ct/client', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (A)', href: '/ct/agent', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (S)', href: '/ct/super', icon: 'fas fa-angle-right' },
+      { label: 'Debit/Credit Entry (Sub)', href: '/ct/sub', icon: 'fas fa-angle-right' },
       { label: 'Debit/Credit Entry (M)', href: '/ct/master', icon: 'fas fa-angle-right' },
+      { label: 'Debit/Credit Entry (S)', href: '/ct/super', icon: 'fas fa-angle-right' },
+      { label: 'Debit/Credit Entry (A)', href: '/ct/agent', icon: 'fas fa-angle-right' },
+      { label: 'Debit/Credit Entry (C)', href: '/ct/client', icon: 'fas fa-angle-right' },
     ],
   },
   {
@@ -44,6 +46,7 @@ const sidebarLinks = [
       { label: 'My Ledger', href: '/ledger', icon: 'fas fa-angle-right' },
       { label: 'Client Plus/Minus', href: '/ledger/client/pm', icon: 'fas fa-angle-right' },
       { label: 'All Client Ledger', href: '/ledger/client', icon: 'fas fa-angle-right' },
+      { label: 'All Sub Ledger', href: '/ledger/sub', icon: 'fas fa-angle-right' },
       { label: 'All Agent Ledger', href: '/ledger/agent', icon: 'fas fa-angle-right' },
       { label: 'All Super Ledger', href: '/ledger/super', icon: 'fas fa-angle-right' },
       { label: 'All Master Ledger', href: '/ledger/master', icon: 'fas fa-angle-right' },
@@ -57,22 +60,17 @@ const sidebarLinks = [
       { label: 'Old Casino Data', href: '#', icon: 'fas fa-angle-right' },
     ],
   },
-  {
-    section: 'REPORTS',
-    links: [
-      { label: 'Master Reports', href: '#', icon: 'fas fa-th-list' },
-      { label: 'Super Reports', href: '#', icon: 'fas fa-th-list' },
-      { label: 'Agent Reports', href: '#', icon: 'fas fa-th-list' },
-      { label: 'Clients Reports', href: '#', icon: 'fas fa-th-list' },
-    ],
-  },
+
   {
     section: 'Login Reports',
     links: [
-      { label: 'Master Login Reports', href: '#', icon: 'fas fa-clipboard-list' },
-      { label: 'Super Login Reports', href: '#', icon: 'fas fa-clipboard-list' },
-      { label: 'Agent Login Reports', href: '#', icon: 'fas fa-clipboard-list' },
-      { label: 'Clients Login Reports', href: '#', icon: 'fas fa-clipboard-list' },
+      { label: 'All Login Reports', href: '/reports/login-reports', icon: 'fas fa-clipboard-list' },
+      { label: 'Boss Login Reports', href: '/reports/login-reports?role=BOSS', icon: 'fas fa-clipboard-list' },
+      { label: 'Sub Login Reports', href: '/reports/login-reports?role=SUB', icon: 'fas fa-clipboard-list' },
+      { label: 'Master Login Reports', href: '/reports/login-reports?role=MASTER', icon: 'fas fa-clipboard-list' },
+      { label: 'Super Login Reports', href: '/reports/login-reports?role=SUPER_AGENT', icon: 'fas fa-clipboard-list' },
+      { label: 'Agent Login Reports', href: '/reports/login-reports?role=AGENT', icon: 'fas fa-clipboard-list' },
+      { label: 'Clients Login Reports', href: '/reports/login-reports?role=USER', icon: 'fas fa-clipboard-list' },
     ],
   },
 ];
@@ -80,8 +78,12 @@ const sidebarLinks = [
 // ===================== Layout Component =====================
 // This component provides the sidebar, navbar, footer, and main content wrapper
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const router = useRouter();
+  
   // -------- Sidebar Section Expand/Collapse State --------
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['REPORTS']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([
+    'USER DETAILS', 'GAMES', 'Casino', 'CASH TRANSACTION', 'LEDGER', 'OLD DATA', 'Login Reports'
+  ]));
   
   // -------- User State --------
   const [user, setUser] = useState<any>(null);
@@ -110,7 +112,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           setUser(data.user);
         } else {
           // Don't redirect here, let individual pages handle session validation
-          console.log('Session invalid in Layout, but not redirecting');
+          // Session invalid in Layout, but not redirecting
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -120,6 +122,117 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     };
     getUserData();
   }, []);
+
+  // -------- Handle Navigation State --------
+  useEffect(() => {
+    // Prevent default browser behavior for navigation
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Only prevent if it's a navigation within the app
+      if (router.asPath !== window.location.pathname) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [router.asPath]);
+
+  // -------- Preserve Scroll Position on Navigation --------
+  useEffect(() => {
+    const handleRouteChangeStart = () => {
+      // Store current scroll position before navigation
+      const currentScroll = window.scrollY;
+      sessionStorage.setItem('scrollPosition', currentScroll.toString());
+      sessionStorage.setItem('scrollTimestamp', Date.now().toString());
+      
+      // Also store the current navbar state
+      sessionStorage.setItem('navbarState', JSON.stringify({
+        sidebarCollapsed: document.body.classList.contains('sidebar-collapse')
+      }));
+
+      // Prevent any scroll reset during navigation
+      const preventScrollReset = () => {
+        if (currentScroll > 0) {
+          window.scrollTo(0, currentScroll);
+        }
+      };
+
+      // Multiple attempts to prevent scroll reset
+      setTimeout(preventScrollReset, 0);
+      setTimeout(preventScrollReset, 10);
+      setTimeout(preventScrollReset, 50);
+    };
+
+    const handleRouteChangeComplete = () => {
+      // Prevent immediate scroll to top
+      const preventScrollToTop = () => {
+        const savedPosition = sessionStorage.getItem('scrollPosition');
+        if (savedPosition) {
+          const targetPosition = parseInt(savedPosition);
+          if (targetPosition > 0) {
+            // Force scroll to saved position
+            window.scrollTo(0, targetPosition);
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // Try to prevent scroll to top immediately
+      if (!preventScrollToTop()) {
+        // If no saved position, allow normal behavior
+        return;
+      }
+
+      // Restore scroll position after navigation with multiple attempts
+      const savedPosition = sessionStorage.getItem('scrollPosition');
+      const savedTimestamp = sessionStorage.getItem('scrollTimestamp');
+      
+      if (savedPosition && savedTimestamp) {
+        const targetPosition = parseInt(savedPosition);
+        const timestamp = parseInt(savedTimestamp);
+        const timeDiff = Date.now() - timestamp;
+        
+        // Only restore if the navigation happened within the last 5 seconds
+        if (timeDiff < 5000) {
+          const restoreScroll = () => {
+            // Use requestAnimationFrame for smooth restoration
+            requestAnimationFrame(() => {
+              window.scrollTo(0, targetPosition);
+            });
+          };
+          
+          // Multiple delayed attempts to handle AdminLTE interference
+          setTimeout(restoreScroll, 10);
+          setTimeout(restoreScroll, 50);
+          setTimeout(restoreScroll, 100);
+          setTimeout(restoreScroll, 200);
+          setTimeout(restoreScroll, 500);
+          setTimeout(restoreScroll, 1000);
+        }
+      }
+      
+      // Restore navbar state
+      const savedNavbarState = sessionStorage.getItem('navbarState');
+      if (savedNavbarState) {
+        const state = JSON.parse(savedNavbarState);
+        if (state.sidebarCollapsed) {
+          document.body.classList.add('sidebar-collapse');
+        } else {
+          document.body.classList.remove('sidebar-collapse');
+        }
+      }
+    };
+
+    router.events.on('routeChangeStart', handleRouteChangeStart);
+    router.events.on('routeChangeComplete', handleRouteChangeComplete);
+
+    return () => {
+      router.events.off('routeChangeStart', handleRouteChangeStart);
+      router.events.off('routeChangeComplete', handleRouteChangeComplete);
+    };
+  }, [router]);
 
   // -------- Sidebar Toggle Handler --------
   const toggleSidebar = () => {
@@ -131,15 +244,152 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     }
   };
 
+  // -------- Scroll to Top Function --------
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  // -------- Handle Scroll Events --------
+  useEffect(() => {
+    const handleScroll = () => {
+      // Ensure navbar stays fixed during scroll
+      const navbar = document.querySelector('.main-header') as HTMLElement;
+      if (navbar) {
+        navbar.style.position = 'fixed';
+        navbar.style.top = '0';
+        navbar.style.left = '0';
+        navbar.style.right = '0';
+        navbar.style.zIndex = '1030';
+        navbar.style.backgroundColor = 'white';
+        navbar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+      }
+    };
+
+    // Force navbar to stay fixed on mount and during any changes
+    const forceNavbarFixed = () => {
+      // Try multiple selectors to find the navbar
+      const navbar = document.getElementById('fixed-navbar') || 
+                    document.querySelector('.main-header') || 
+                    document.querySelector('nav.main-header') as HTMLElement;
+      
+      if (navbar) {
+        // Force all critical styles
+        navbar.style.position = 'fixed';
+        navbar.style.top = '0';
+        navbar.style.left = '0';
+        navbar.style.right = '0';
+        navbar.style.zIndex = '1030';
+        navbar.style.backgroundColor = 'white';
+        navbar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+        navbar.style.marginTop = '0';
+        navbar.style.marginBottom = '0';
+        navbar.style.transform = 'none';
+        navbar.style.transition = 'none';
+        navbar.style.willChange = 'auto';
+        
+        // Also set as CSS custom property for extra enforcement
+        navbar.style.setProperty('--navbar-fixed', 'true');
+        navbar.style.setProperty('--navbar-top', '0px');
+        navbar.style.setProperty('--navbar-z-index', '1030');
+      }
+    };
+
+    // Override window.scrollTo to prevent unwanted scroll resets
+    const originalScrollTo = window.scrollTo;
+    (window as any).scrollTo = function(options: any, y?: number) {
+      // Only allow scroll to top if it's our own scroll restoration
+      if (typeof options === 'object' && options.top === 0) {
+        const savedPosition = sessionStorage.getItem('scrollPosition');
+        if (savedPosition) {
+          const targetPosition = parseInt(savedPosition);
+          if (targetPosition > 0) {
+            // Don't scroll to top if we have a saved position
+            return;
+          }
+        }
+      }
+      return originalScrollTo.call(this, options, y || 0);
+    };
+
+    // Force navbar fixed immediately
+    forceNavbarFixed();
+
+    // Set up interval to continuously ensure navbar stays fixed
+    const interval = setInterval(forceNavbarFixed, 50); // More frequent checks
+    
+    // Also set up a more aggressive interval for critical moments
+    const criticalInterval = setInterval(() => {
+      const navbar = document.getElementById('fixed-navbar') as HTMLElement;
+      if (navbar && navbar.style.position !== 'fixed') {
+        forceNavbarFixed();
+      }
+    }, 10);
+
+    // Watch for DOM changes that might affect navbar
+    const observer = new MutationObserver(() => {
+      forceNavbarFixed();
+    });
+
+    // Observe the entire document for changes
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class']
+    });
+
+    // Prevent any scroll events from affecting navbar position
+    const preventNavbarScroll = (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      forceNavbarFixed();
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('resize', forceNavbarFixed);
+    
+    // Add more event listeners to catch any navbar movement
+    document.addEventListener('scroll', preventNavbarScroll, { capture: true });
+    document.addEventListener('wheel', preventNavbarScroll, { capture: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', forceNavbarFixed);
+      document.removeEventListener('scroll', preventNavbarScroll, { capture: true });
+      document.removeEventListener('wheel', preventNavbarScroll, { capture: true });
+      clearInterval(interval);
+      clearInterval(criticalInterval);
+      observer.disconnect();
+      window.scrollTo = originalScrollTo;
+    };
+  }, []);
+
   return (
     <div className="hold-transition sidebar-mini">
       <div className="wrapper">
         {/* ===================== Navbar ===================== */}
-        <nav className="main-header navbar navbar-expand navbar-white navbar-light" style={{ 
-          position: 'relative', 
-          zIndex: 999,
-          minHeight: '60px'
-        }}>
+        <nav 
+          id="fixed-navbar"
+          className="main-header navbar navbar-expand navbar-white navbar-light" 
+          style={{ 
+            position: 'fixed', 
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1030,
+            minHeight: '60px',
+            transition: 'none',
+            backgroundColor: 'white',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+            marginTop: 0,
+            marginBottom: 0,
+            transform: 'none',
+            willChange: 'auto'
+          }}
+        >
           {/* Left navbar links */}
           <ul className="navbar-nav">
             <li className="nav-item">
@@ -187,16 +437,16 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 
                 {/* Menu Footer*/}
                 <li className="user-footer">
-                  <a href="/profile" className="btn btn-default btn-flat">Profile</a>
+                  <Link href="/profile" className="btn btn-default btn-flat">Profile</Link>
                   <a href="#" className="btn btn-default btn-flat float-right" 
                      onClick={async (e) => {
                        e.preventDefault();
                        try {
                          await fetch('/api/auth/logout', { method: 'POST' });
-                         window.location.href = '/login';
+                         router.push('/login');
                        } catch (error) {
                          console.error('Logout error:', error);
-                         window.location.href = '/login';
+                         router.push('/login');
                        }
                      }}>
                     Sign out
@@ -208,9 +458,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </nav>
 
         {/* ===================== Sidebar ===================== */}
-        <aside className="main-sidebar sidebar-light-indigo elevation-4">
+        <aside className="main-sidebar sidebar-light-indigo elevation-4" style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          height: '100vh',
+          zIndex: 1031
+        }}>
           {/* Brand Logo */}
-          <a href="/" className="brand-link bg-indigo text-white">
+          <Link href="/" className="brand-link bg-indigo text-white">
             <img 
               src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" 
               alt="AdminLTE Logo"
@@ -218,7 +474,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               style={{ opacity: '.8' }}
             />
             <span className="brand-text font-weight-light" id="brandName">BETX</span>
-          </a>
+          </Link>
 
           {/* Sidebar Navigation Menu */}
           <div className="sidebar">
@@ -228,12 +484,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                   const isExpanded = expandedSections.has(section.section);
                   return (
                     <React.Fragment key={section.section}>
-                      <li className="nav-header">{section.section}</li>
-                      {section.links.map(link => (
+                      <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section.section)}>
+                        {section.section}
+                        <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} float-right`} style={{ fontSize: '12px', marginTop: '3px' }}></i>
+                      </li>
+                      {isExpanded && section.links.map(link => (
                         <li className="nav-item" key={link.label}>
-                          <Link href={link.href} className="nav-link">
-                            <i className={`nav-icon ${link.icon}`}></i>
-                            <p>{link.label}</p>
+                          <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}>
+                            <i className={`nav-icon ${link.icon}`} style={{ fontSize: '12px', marginRight: '8px' }}></i>
+                            <p style={{ margin: '0', fontSize: '13px' }}>{link.label}</p>
                           </Link>
                         </li>
                       ))}
@@ -246,7 +505,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </aside>
 
         {/* ===================== Main Content Wrapper ===================== */}
-        <div className="content-wrapper">
+        <div className="content-wrapper" style={{
+          marginTop: '60px',
+          marginLeft: '250px',
+          minHeight: 'calc(100vh - 60px)',
+          transition: 'margin-left 0.3s ease-in-out'
+        }}>
           {/* This is where the page content is rendered */}
           {children}
         </div>
