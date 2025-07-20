@@ -46,7 +46,7 @@ const SubAgentLimitUpdatePage = () => {
 
   const handleLimitUpdate = async (id: string, type: 'Add' | 'Minus') => {
     const value = inputValues[id];
-    console.log('handleLimitUpdate called:', { id, type, value, inputValues });
+    // handleLimitUpdate called
     
     if (!value || isNaN(Number(value))) {
       alert('Please enter a valid amount');
@@ -60,7 +60,7 @@ const SubAgentLimitUpdatePage = () => {
     }
     
     try {
-      console.log('Sending request to update limit:', { userId: id, amount, type });
+      // Sending request to update limit
       
       const res = await fetch('/api/users/update-limit', {
         method: 'POST',
@@ -68,9 +68,8 @@ const SubAgentLimitUpdatePage = () => {
         body: JSON.stringify({ userId: id, amount, type }),
       });
       
-      console.log('Response status:', res.status);
-      const data = await res.json();
-      console.log('Response data:', data);
+              const data = await res.json();
+        // Response data
       
       if (res.ok && data.success) {
         alert(`Limit ${type.toLowerCase()}ed successfully!`);
@@ -99,7 +98,7 @@ const SubAgentLimitUpdatePage = () => {
             </div>
             <div className="col-sm-6">
               <ol className="breadcrumb float-sm-right">
-                <li className="breadcrumb-item"><Link href="/master">SubAgent</Link></li>
+                <li className="breadcrumb-item"><Link href="/user_details/sub">SubAgent</Link></li>
                 <li className="breadcrumb-item active">Update SubAgent Limit</li>
               </ol>
             </div>

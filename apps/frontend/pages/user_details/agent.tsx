@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import Head from 'next/head';
 import Link from 'next/link';
+import NewUserButton from '../../components/NewUserButton';
 
 export default function AgentPage() {
   const [siteName, setSiteName] = useState('');
@@ -283,9 +284,9 @@ export default function AgentPage() {
                 <form action="#" method="post" id="demoForm">
                   <div className="card-header">
                     <div className="form-group">
-                      <Link href="/user/create?userType=AGENT" className="btn btn-primary mr-2">
+                      <NewUserButton role="AGENT" className="btn btn-primary mr-2">
                         New <i className="fa fa-plus-circle"></i>
-                      </Link>
+                      </NewUserButton>
                       {selectedUsers.length > 0 && (
                         <span className="badge badge-info mr-2">
                           {selectedUsers.length} user(s) selected

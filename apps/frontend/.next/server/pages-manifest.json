@@ -2,9 +2,11 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js",
-  "/master/limit": "pages/master/limit.js",
-  "/master_details/sub": "pages/master_details/sub.js",
+  "/user_details/master": "pages/user_details/master.js",
+  "/user_details/sub": "pages/user_details/sub.js",
+  "/api/auth/session": "pages/api/auth/session.js",
   "/api/users": "pages/api/users.js",
-  "/api/users/update-status": "pages/api/users/update-status.js"
+  "/ct/sub": "pages/ct/sub.js",
+  "/ct/master": "pages/ct/master.js",
+  "/api/users/[id]/ledger": "pages/api/users/[id]/ledger.js"
 }

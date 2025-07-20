@@ -19,15 +19,25 @@ self.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/master/limit": [
+    "/ct/master": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/master/limit.js"
+      "static/chunks/pages/ct/master.js"
     ],
-    "/master_details/sub": [
+    "/ct/sub": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/master_details/sub.js"
+      "static/chunks/pages/ct/sub.js"
+    ],
+    "/user_details/master": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/user_details/master.js"
+    ],
+    "/user_details/sub": [
+      "static/chunks/webpack.js",
+      "static/chunks/main.js",
+      "static/chunks/pages/user_details/sub.js"
     ]
   },
   "ampFirstPages": []

@@ -59,7 +59,7 @@ export default function App({ Component, pageProps }: AppProps) {
           brandNameElement.textContent = siteName;
         }
 
-        console.log('AdminLTE initialized successfully');
+        // AdminLTE initialized successfully
       } catch (error) {
         console.error('Error loading AdminLTE scripts:', error);
       }

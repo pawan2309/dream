@@ -3,6 +3,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { useRouter } from 'next/router';
 
+
 // Removed server-side auth check to prevent redirect loops
 export const getServerSideProps = async () => {
   return { props: {} };
@@ -10,6 +11,8 @@ export const getServerSideProps = async () => {
 
 const UserCreatePage = () => {
   const router = useRouter();
+  const { role, parentId } = router.query; // Get role and parentId from URL query parameter
+  
   const [formData, setFormData] = useState({
     code: 'Auto Generated',
     name: '',
@@ -26,24 +29,52 @@ const UserCreatePage = () => {
     casinocommission: 0.0
   });
 
+  // Constants for commission calculations
+  const [commissionConstants] = useState({
+    mc: 2.0, // Match Commission
+    sc: 3.0, // Session Commission  
+    cc: 2.0  // Casino Commission
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSessionValid, setIsSessionValid] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [currentUserRole, setCurrentUserRole] = useState<string>('');
+
+  // Get role display name
+  const getRoleDisplayName = (role: string) => {
+    switch (role) {
+      case 'SUB': return 'Sub Agent';
+      case 'MASTER': return 'Master Agent';
+      case 'SUPER_AGENT': return 'Super Agent';
+      case 'AGENT': return 'Agent';
+      case 'USER': return 'Client';
+      default: return 'User';
+    }
+  };
+
+  // Get redirect path based on role
+  const getRedirectPath = (role: string) => {
+    switch (role) {
+      case 'SUB': return '/user_details/sub';
+      case 'MASTER': return '/user_details/master';
+      case 'SUPER_AGENT': return '/user_details/super';
+      case 'AGENT': return '/user_details/agent';
+      case 'USER': return '/user_details/client';
+      default: return '/user_details/sub';
+    }
+  };
 
   // Check session validity on component mount
   useEffect(() => {
     const checkSession = async () => {
       try {
-        console.log('Checking session...');
         const res = await fetch('/api/auth/session');
-        console.log('Session response status:', res.status);
         const data = await res.json();
-        console.log('Session data:', data);
         if (data.valid) {
-          console.log('Session is valid');
           setIsSessionValid(true);
+          setCurrentUserRole(data.user.role);
         } else {
-          console.log('Session invalid, will redirect to login');
           // Small delay to prevent immediate redirect
           setTimeout(() => {
             router.replace('/login');
@@ -84,36 +115,64 @@ const UserCreatePage = () => {
     setFormData(prev => ({ 
       ...prev, 
       session_commission_type: value,
-      matchcommission: value === 'No Comm' ? 0.0 : 2.0,
-      sessioncommission: value === 'No Comm' ? 0.0 : 3.0,
-      casinocommission: value === 'No Comm' ? 0.0 : 2.0
+      matchcommission: value === 'No Comm' ? 0.0 : commissionConstants.mc,
+      sessioncommission: value === 'No Comm' ? 0.0 : commissionConstants.sc,
+      casinocommission: value === 'No Comm' ? 0.0 : commissionConstants.cc
     }));
+  };
+
+  // Calculate my share based on user share
+  const calculateMyShare = (userShare: number) => {
+    return Math.max(0, 94.0 - userShare);
+  };
+
+  // Calculate my mobile share based on user mobile share
+  const calculateMyMobileShare = (userMobileShare: number) => {
+    return Math.max(0, 100.0 - userMobileShare);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Use role from URL query parameter, default to 'SUB' if not provided
+    const userRole = (role as string) || 'SUB';
+    
+    // If parentId is provided in URL, use it directly
+    if (parentId) {
+      await createUser(userRole, parentId as string);
+      return;
+    }
+    
+    // Otherwise, use current user as parent (for direct subordinates)
+    await createUser(userRole, currentUserRole === 'BOSS' ? null : currentUserRole);
+  };
+
+  const createUser = async (userRole: string, parentId?: string | null) => {
     setIsLoading(true);
     
     try {
-      // Get current user's session to determine parentId
-      const sessionRes = await fetch('/api/auth/session');
-      const sessionData = await sessionRes.json();
-      
-      if (!sessionData.valid) {
-        alert('Session expired. Please login again.');
-        router.push('/login');
-        return;
+      // Get current user's session to determine parentId if not provided
+      let finalParentId = parentId;
+      if (!finalParentId) {
+        const sessionRes = await fetch('/api/auth/session');
+        const sessionData = await sessionRes.json();
+        
+        if (!sessionData.valid) {
+          alert('Session expired. Please login again.');
+          router.push('/login');
+          return;
+        }
+        finalParentId = sessionData.user.id;
       }
 
       // Prepare user data for API
       const userData = {
         ...formData,
-        role: 'SUB', // This form is for creating Sub Agents
-        parentId: sessionData.user.id // Set the current user as parent
+        role: userRole,
+        parentId: finalParentId
       };
 
-      console.log('Creating user with data:', userData);
-      
+      // Creating user with data
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: {
@@ -123,11 +182,10 @@ const UserCreatePage = () => {
       });
 
       const data = await res.json();
-      console.log('User creation response:', data);
       
       if (data.success) {
         alert('User created successfully!');
-        router.push('/master_details/sub');
+        router.push(getRedirectPath(userRole));
       } else {
         const errorMessage = data.error || data.message || 'Unknown error';
         alert('Failed to create user: ' + errorMessage);
@@ -139,6 +197,8 @@ const UserCreatePage = () => {
       setIsLoading(false);
     }
   };
+
+
 
   // Show loading while checking session
   if (isCheckingSession) {
@@ -172,10 +232,13 @@ const UserCreatePage = () => {
     return null; // Will redirect to login
   }
 
+  const userRole = (role as string) || 'SUB';
+  const roleDisplayName = getRoleDisplayName(userRole);
+
   return (
     <Layout>
       <Head>
-        <title>Create User</title>
+        <title>Create {roleDisplayName}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback" />
         <link rel="stylesheet" href="/adminlite/plugins/fontawesome-free/css/all.min-26386564b5cf1594be24059af1cd0db9.css" />
@@ -194,12 +257,12 @@ const UserCreatePage = () => {
         <div className="container-fluid">
           <div className="row mb-2">
             <div className="col-sm-6">
-              <h1>Sub Agent</h1>
+              <h1>{roleDisplayName}</h1>
             </div>
             <div className="col-sm-6">
               <ol className="breadcrumb float-sm-right">
-                <li className="breadcrumb-item"><a href="/master_details/sub">Sub Agent</a></li>
-                <li className="breadcrumb-item active">New Sub Agent</li>
+                <li className="breadcrumb-item"><a href={getRedirectPath(userRole)}>{roleDisplayName}</a></li>
+                <li className="breadcrumb-item active">New {roleDisplayName}</li>
               </ol>
             </div>
           </div>
@@ -255,7 +318,6 @@ const UserCreatePage = () => {
                       id="reference" 
                       className="form-control" 
                       placeholder="Reference"
-                      required 
                       name="reference" 
                       value={formData.reference}
                       onChange={handleInputChange}
@@ -276,24 +338,24 @@ const UserCreatePage = () => {
                         value={formData.password}
                         onChange={handleInputChange}
                       />
-                      <span className="input-group-append">
+                      <div className="input-group-append">
                         <button 
-                          type="button"
-                          className="btn btn-info btn-flat"
+                          type="button" 
+                          className="btn btn-info btn-flat" 
                           onClick={generatePassword}
                         >
                           Generate Password
                         </button>
-                      </span>
+                      </div>
                     </div>
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="mobile">Contact No</label>
+                    <label htmlFor="contactno">Contact No</label>
                     <input 
                       type="number" 
                       className="form-control" 
-                      id="mobile"
+                      id="contactno"
                       placeholder="Mobile No" 
                       required 
                       name="contactno" 
@@ -318,11 +380,11 @@ const UserCreatePage = () => {
                 <div className="card-body">
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="share">Sub Agent Share</label>
+                      <label htmlFor="share">{roleDisplayName} Share</label>
                       <input 
                         type="number" 
-                        max={94.0} 
-                        min={0} 
+                        max="94.0" 
+                        min="0" 
                         placeholder="Share" 
                         className="form-control"
                         id="share"
@@ -339,7 +401,7 @@ const UserCreatePage = () => {
                         type="number" 
                         placeholder="Share" 
                         className="form-control"
-                        value={94.0 - formData.share} 
+                        value={calculateMyShare(formData.share)} 
                         id="mshare" 
                         readOnly
                       />
@@ -348,11 +410,11 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="cshare">Sub Casino Agent Share</label>
+                      <label htmlFor="cshare">{roleDisplayName} Casino Share</label>
                       <input 
                         type="number" 
-                        max={94.0} 
-                        min={0} 
+                        max="94.0" 
+                        min="0" 
                         placeholder="Casino Share" 
                         className="form-control"
                         id="cshare"
@@ -369,7 +431,7 @@ const UserCreatePage = () => {
                         type="number" 
                         placeholder="Share" 
                         className="form-control"
-                        value={94.0 - formData.cshare} 
+                        value={calculateMyShare(formData.cshare)} 
                         id="cmshare" 
                         readOnly
                       />
@@ -378,11 +440,11 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="icshare">Sub Int. Casino Share</label>
+                      <label htmlFor="icshare">{roleDisplayName} Int. Casino Share</label>
                       <input 
                         type="number" 
-                        max={0.0} 
-                        min={0} 
+                        max="0.0" 
+                        min="0" 
                         placeholder="Casino Share" 
                         className="form-control"
                         id="icshare"
@@ -399,7 +461,7 @@ const UserCreatePage = () => {
                         type="number" 
                         placeholder="Share" 
                         className="form-control"
-                        value={0.0 - formData.icshare} 
+                        value="0.0" 
                         id="icmshare" 
                         readOnly
                       />
@@ -408,15 +470,15 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="mobile_share">Sub Agent Mobile Share</label>
+                      <label htmlFor="mobileshare">{roleDisplayName} Mobile Share</label>
                       <input 
                         type="number" 
-                        min={0} 
+                        min="0" 
                         placeholder="Mobile Share"
                         className="form-control" 
-                        max={100.0} 
+                        max="100.0" 
                         step="0.01"
-                        id="mobile_share" 
+                        id="mobileshare" 
                         required 
                         name="mobileshare" 
                         value={formData.mobileshare}
@@ -424,19 +486,18 @@ const UserCreatePage = () => {
                       />
                     </div>
                     <div className="form-group col-md-6">
-                      <label htmlFor="mobileshare">My Mobile Share</label>
+                      <label htmlFor="mymobileshare">My Mobile Share</label>
                       <input 
                         type="number" 
-                        min={0} 
+                        min="0" 
                         placeholder="Mobile Share"
                         className="form-control" 
-                        max={100} 
+                        max="100" 
                         step="0.01"
                         readOnly 
                         required 
-                        id="mobileshare" 
-                        name="mobileshare" 
-                        value={100.0 - formData.mobileshare}
+                        id="mymobileshare" 
+                        value={calculateMyMobileShare(formData.mobileshare)}
                       />
                     </div>
                   </div>
@@ -446,6 +507,7 @@ const UserCreatePage = () => {
                     <select 
                       id="session_commission_type" 
                       className="form-control"
+                      name="session_commission_type" 
                       value={formData.session_commission_type}
                       onChange={handleCommissionTypeChange}
                     >
@@ -456,18 +518,18 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="match_commission">Match Commission</label>
+                      <label htmlFor="matchcommission">Match Commission</label>
                       <input 
                         type="number" 
+                        value={formData.matchcommission} 
                         className="form-control" 
                         placeholder="Match" 
-                        min={0}
-                        max={2.0} 
+                        min="0"
+                        max="2.0" 
                         step="0.01"
-                        id="match_commission" 
+                        id="matchcommission" 
                         required 
                         name="matchcommission"
-                        value={formData.matchcommission}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -476,9 +538,9 @@ const UserCreatePage = () => {
                       <input 
                         id="mc" 
                         type="text" 
-                        min={0} 
-                        max={3} 
-                        value={2.0 - formData.matchcommission}
+                        min="0" 
+                        max="3" 
+                        value={commissionConstants.mc}
                         className="form-control"
                         readOnly
                       />
@@ -487,18 +549,18 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="session_commission">Session Commission</label>
+                      <label htmlFor="sessioncommission">Session Commission</label>
                       <input 
                         type="number" 
+                        value={formData.sessioncommission} 
                         className="form-control" 
                         placeholder="Match" 
-                        min={0}
-                        max={3.0} 
+                        min="0"
+                        max="3.0" 
                         step="0.01"
-                        id="session_commission" 
+                        id="sessioncommission" 
                         required 
                         name="sessioncommission"
-                        value={formData.sessioncommission}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -506,10 +568,10 @@ const UserCreatePage = () => {
                       <label htmlFor="sc">My Session Commission</label>
                       <input 
                         type="number" 
+                        value={commissionConstants.sc} 
                         id="sc"
                         className="form-control"
                         placeholder="Session Commission"
-                        value={3.0 - formData.sessioncommission}
                         readOnly
                       />
                     </div>
@@ -517,18 +579,18 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="casino_commission">Casino Commission</label>
+                      <label htmlFor="casinocommission">Casino Commission</label>
                       <input 
                         type="number" 
+                        value={formData.casinocommission} 
                         className="form-control" 
                         placeholder="Match" 
-                        min={0}
-                        max={2.0} 
+                        min="0"
+                        max="2.0" 
                         step="0.01"
-                        id="casino_commission" 
+                        id="casinocommission" 
                         required 
                         name="casinocommission"
-                        value={formData.casinocommission}
                         onChange={handleInputChange}
                       />
                     </div>
@@ -536,10 +598,10 @@ const UserCreatePage = () => {
                       <label htmlFor="cc">My Casino Commission</label>
                       <input 
                         type="number" 
+                        value={commissionConstants.cc} 
                         id="cc"
                         className="form-control"
                         placeholder="Session Commission"
-                        value={2.0 - formData.casinocommission}
                         readOnly
                       />
                     </div>
@@ -551,13 +613,21 @@ const UserCreatePage = () => {
 
           <div className="row">
             <div className="col-12">
-              <a href="/master_details/sub" className="btn btn-secondary">Cancel</a>
+              <a href={getRedirectPath(userRole)} className="btn btn-secondary">Cancel</a>
               <button 
                 type="submit" 
-                className="btn btn-success float-right"
+                className="btn btn-success float-right" 
                 disabled={isLoading}
               >
-                {isLoading ? 'Creating...' : 'Create New Sub Agent'}
+                {isLoading ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i> Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-save"></i> Create New {roleDisplayName}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -577,6 +647,8 @@ const UserCreatePage = () => {
       <script src="https://adminlite.s3.ap-south-1.amazonaws.com/adminlite/plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
       <script src="https://adminlite.s3.ap-south-1.amazonaws.com/adminlite/dist/js/demo.js"></script>
       <script src="https://adminlite.s3.ap-south-1.amazonaws.com/adminlite/plugins/toastr/toastr.min.js"></script>
+      
+
     </Layout>
   );
 };

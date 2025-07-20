@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Layout from '../../components/Layout';
 import Head from 'next/head';
 import Link from 'next/link';
+import NewUserButton from '../../components/NewUserButton';
 
 // Empty array for real data
 const emptySubs: any[] = [];
@@ -169,7 +170,7 @@ export default function SubAgentPage() {
         break;
       case 'superAgentLimit':
         // Navigate to super agent limit page
-        window.location.href = `/user_details/limit?userId=${user.id}`;
+        window.location.href = `/user_details/super_limit?userId=${user.id}`;
         break;
       case 'sendSMS':
         alert(`Send SMS login details to: ${user.contactno}`);
@@ -179,6 +180,10 @@ export default function SubAgentPage() {
         break;
       case 'emergency':
         alert(`Master emergency action for: ${user.name}`);
+        break;
+      case 'limitUpdate':
+        // Navigate to sub agent limit update page
+        window.location.href = `/user_details/sub_limit?userId=${user.id}`;
         break;
       default:
         break;
@@ -289,9 +294,9 @@ export default function SubAgentPage() {
                 <form action="#" method="post" id="demoForm">
                   <div className="card-header">
                     <div className="form-group">
-                      <Link href="/user/create" className="btn btn-primary mr-2">
+                      <NewUserButton role="SUB" className="btn btn-primary mr-2">
                         New <i className="fa fa-plus-circle"></i>
-                      </Link>
+                      </NewUserButton>
                       {selectedUsers.length > 0 && (
                         <span className="badge badge-info mr-2">
                           {selectedUsers.length} user(s) selected
@@ -313,7 +318,7 @@ export default function SubAgentPage() {
                       >
                         {deactivating ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fa fa-ban"></i> DeActivate</>}
                       </button>
-                      <a href="/user_details/limit" className="btn btn-primary">
+                      <a href="/user_details/sub_limit" className="btn btn-primary">
                         Limit Update
                       </a>
                     </div>

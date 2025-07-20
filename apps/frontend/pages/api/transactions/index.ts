@@ -101,7 +101,7 @@ async function createTransaction(req: NextApiRequest, res: NextApiResponse, curr
     }
 
     // Validate transaction type
-    const validTypes = ['DEPOSIT', 'WITHDRAWAL', 'BET_PLACED', 'BET_WON', 'BET_LOST', 'COMMISSION', 'BONUS', 'REFUND', 'TRANSFER'];
+    const validTypes = ['DEPOSIT', 'WITHDRAWAL', 'WIN', 'LOSS', 'ADJUSTMENT'];
     if (!validTypes.includes(type)) {
       return res.status(400).json({ 
         success: false, 
@@ -127,51 +127,54 @@ async function createTransaction(req: NextApiRequest, res: NextApiResponse, curr
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Calculate new balance
+    // Calculate new balance and ledger entries
     let newBalance = user.balance;
+    let debit = 0;
+    let credit = 0;
+    
     switch (type) {
       case 'DEPOSIT':
-      case 'BET_WON':
-      case 'COMMISSION':
-      case 'BONUS':
-      case 'REFUND':
+      case 'WIN':
+        credit = amount;
         newBalance += amount;
         break;
       case 'WITHDRAWAL':
-      case 'BET_PLACED':
-      case 'BET_LOST':
+      case 'LOSS':
         if (newBalance < amount) {
           return res.status(400).json({ success: false, message: 'Insufficient balance' });
         }
+        debit = amount;
         newBalance -= amount;
         break;
-      case 'TRANSFER':
-        // For transfers, you might want to create two transactions
-        newBalance -= amount;
+      case 'ADJUSTMENT':
+        if (amount > 0) {
+          credit = amount;
+          newBalance += amount;
+        } else {
+          debit = Math.abs(amount);
+          if (newBalance < Math.abs(amount)) {
+            return res.status(400).json({ success: false, message: 'Insufficient balance' });
+          }
+          newBalance += amount; // amount is negative here
+        }
         break;
     }
 
-    // Create transaction
-    const transaction = await prisma.transaction.create({
+    // Create ledger entry
+    const ledger = await prisma.ledger.create({
       data: {
-        type,
-        amount,
-        balance: newBalance,
-        description,
-        reference,
-        status: 'COMPLETED',
         userId: targetUserId,
-        createdById: currentUser.id
+        collection: 'CA1 CASH',
+        debit,
+        credit,
+        balanceAfter: newBalance,
+        type: type as any,
+        transactionType: 'MANUAL_ADJUST',
+        referenceId: reference,
+        remark: description
       },
       include: {
         user: {
-          select: {
-            id: true,
-            username: true,
-            name: true
-          }
-        },
-        createdBy: {
           select: {
             id: true,
             username: true,
@@ -190,7 +193,7 @@ async function createTransaction(req: NextApiRequest, res: NextApiResponse, curr
     return res.status(201).json({
       success: true,
       message: 'Transaction created successfully',
-      data: transaction
+      data: ledger
     });
   } catch (error) {
     console.error('Create transaction error:', error);

@@ -35,7 +35,7 @@ model User {
   ledger                  Ledger[]
   loginSessions           LoginSession[]
   profitDistributions     ProfitDistribution[]
-  parent                  User?                @relation("UserHierarchy", fields: [parentId], references: [id])
+  parent                  User?                @relation("UserHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children                User[]               @relation("UserHierarchy")
 }
 
@@ -51,7 +51,7 @@ model Ledger {
   createdAt       DateTime   @default(now())
   referenceId     String?
   transactionType String?
-  user            User       @relation(fields: [userId], references: [id])
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Match {
@@ -73,7 +73,7 @@ model Bet {
   status              BetStatus            @default(PENDING)
   createdAt           DateTime             @default(now())
   match               Match                @relation(fields: [matchId], references: [id])
-  user                User                 @relation(fields: [userId], references: [id])
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   profitDistributions ProfitDistribution[]
 }
 
@@ -85,7 +85,7 @@ model ProfitDistribution {
   amountEarned Float
   createdAt    DateTime @default(now())
   bet          Bet      @relation(fields: [betId], references: [id])
-  user         User     @relation(fields: [userId], references: [id])
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model LoginSession {
@@ -100,7 +100,7 @@ model LoginSession {
   sessionDuration Int?
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
-  user            User      @relation(fields: [userId], references: [id])
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([loginAt])

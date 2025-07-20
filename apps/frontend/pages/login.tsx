@@ -30,19 +30,18 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting login form');
+    // Submitting login form
     setError('');
     setLoading(true);
     try {
-      console.log('About to send fetch to /api/auth/login');
+      // About to send fetch to /api/auth/login
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-      console.log('Fetch sent, awaiting response...');
-      const data = await res.json();
-      console.log('Received response:', data);
+              const data = await res.json();
+        // Received response
       if (!data.success && data.message === 'Contact admin') {
         setError('Contact admin');
       } else if (!data.success && data.message === 'Password wrong') {

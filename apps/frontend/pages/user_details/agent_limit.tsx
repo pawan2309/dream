@@ -123,7 +123,7 @@ export default function AgentLimitUpdate() {
               <div className="card-header">
                 <h4>Agent Coin Details</h4>
                 <a href="/user_details/agent" className="btn btn-secondary">
-                  <i className="fa fa-arrow-left"></i> Back to Agents
+                  <i className="fa fa-arrow-left"></i> Back to Agent Master
                 </a>
               </div>
               <div className="card-body">

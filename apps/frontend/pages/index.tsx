@@ -24,17 +24,18 @@ const CARD_COLORS = [
 // ===================== Dashboard Card Maps =====================
 // These define the sections and navigation for the dashboard
 const userMap = [
-  { label: 'Sub Agent Master', value: 'master_details/sub' },
-  { label: 'Master', value: 'master_details/master' },
-  { label: 'Super', value: 'master_details/super' },
-  { label: 'Agent', value: 'master_details/agent' },
-  { label: 'Client', value: 'master_details/client' },
-  { label: 'Collection', value: 'master_details/collection' },
+  { label: 'Sub Agent Master', value: 'user_details/sub' },
+  { label: 'Master', value: 'user_details/master' },
+  { label: 'Super', value: 'user_details/super' },
+  { label: 'Agent', value: 'user_details/agent' },
+  { label: 'Client', value: 'user_details/client' },
+  { label: 'Collection', value: 'user_details/collection' },
 ];
 const ledgerMap = [
   { label: 'My Ledger', value: 'ledger' },
   { label: 'Client Plus/Minus', value: 'ledger/client/pm' },
   { label: 'All Client Ledger', value: 'ledger/client' },
+  { label: 'All Sub Ledger', value: 'ledger/sub' },
   { label: 'All Agent Ledger', value: 'ledger/agent' },
   { label: 'All Super Ledger', value: 'ledger/super' },
   { label: 'All Master Ledger', value: 'ledger/master' },
@@ -141,7 +142,7 @@ const IndexPage = () => {
 
   // -------- Handle Card Clicks (Navigation/Modal) --------
   const handleItemClick = (value: string, label: string) => {
-    if (value === 'master_details/client') {
+    if (value === 'user_details/client') {
       setCurrentView('client');
       // Show client table in modal
       const clientTableContent = (
@@ -214,7 +215,7 @@ const IndexPage = () => {
         <div className="container-fluid">
          
           <div className="row">
-            <div className="col-lg-3 col-6" onClick={() => showModel('master')}>
+            <div className="col-lg-3 col-6" onClick={() => showModel('user')}>
               <div className="small-box bg-primary" style={{ cursor: 'pointer' }}>
                 <div className="inner">
                   <h3>1</h3>
