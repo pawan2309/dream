@@ -25,20 +25,20 @@ const CARD_COLORS = [
 // These define the sections and navigation for the dashboard
 const userMap = [
   { label: 'Sub Agent Master', value: 'user_details/sub' },
-  { label: 'Master', value: 'user_details/master' },
-  { label: 'Super', value: 'user_details/super' },
-  { label: 'Agent', value: 'user_details/agent' },
-  { label: 'Client', value: 'user_details/client' },
-  { label: 'Collection', value: 'user_details/collection' },
+  { label: 'MasterAgent Master', value: 'user_details/master' },
+  { label: 'SuperAgent Master', value: 'user_details/super' },
+  { label: 'Agent Master', value: 'user_details/agent' },
+  { label: 'Client Master', value: 'user_details/client' },
+  { label: 'Collection Master', value: 'user_details/collection' },
 ];
 const ledgerMap = [
   { label: 'My Ledger', value: 'ledger' },
-  { label: 'Client Plus/Minus', value: 'ledger/client/pm' },
-  { label: 'All Client Ledger', value: 'ledger/client' },
   { label: 'All Sub Ledger', value: 'ledger/sub' },
-  { label: 'All Agent Ledger', value: 'ledger/agent' },
-  { label: 'All Super Ledger', value: 'ledger/super' },
   { label: 'All Master Ledger', value: 'ledger/master' },
+  { label: 'All Super Ledger', value: 'ledger/super' },
+  { label: 'All Agent Ledger', value: 'ledger/agent' },
+  { label: 'All Client Ledger', value: 'ledger/client' },
+  { label: 'Client Plus/Minus', value: 'ledger/client/pm' },
 ];
 const gameMap = [
   { label: 'InPlay', value: 'game/inPlay' },
@@ -211,7 +211,7 @@ const IndexPage = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
       </Head>
       
-      <section className="content">
+      <section className="content" style={{ paddingTop: '20px' }}>
         <div className="container-fluid">
          
           <div className="row">

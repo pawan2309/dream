@@ -229,16 +229,6 @@ export default function AllMasterLedgerPage() {
 
                   {selectedMasterData ? (
                     <>
-                      <div className="alert alert-info">
-                        <h6>
-                          <strong>Selected Master:</strong> {selectedMasterData.name} ({selectedMasterData.code})
-                          <br />
-                          <strong>Current Credit Limit:</strong> {formatAmount(selectedMasterData.creditLimit)}
-                          <br />
-                          <strong>Total Ledger Entries:</strong> {selectedMasterLedger.length}
-                        </h6>
-                      </div>
-
                       {selectedMasterLedger.length === 0 ? (
                         <div className="alert alert-warning">
                           <h6>No ledger entries found for this master</h6>

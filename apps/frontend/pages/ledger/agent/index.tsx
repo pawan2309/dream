@@ -229,16 +229,6 @@ export default function AllAgentLedgerPage() {
 
                   {selectedAgentData ? (
                     <>
-                      <div className="alert alert-info">
-                        <h6>
-                          <strong>Selected Agent:</strong> {selectedAgentData.name} ({selectedAgentData.code})
-                          <br />
-                          <strong>Current Credit Limit:</strong> {formatAmount(selectedAgentData.creditLimit)}
-                          <br />
-                          <strong>Total Ledger Entries:</strong> {selectedAgentLedger.length}
-                        </h6>
-                      </div>
-
                       {selectedAgentLedger.length === 0 ? (
                         <div className="alert alert-warning">
                           <h6>No ledger entries found for this agent</h6>

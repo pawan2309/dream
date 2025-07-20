@@ -247,21 +247,7 @@ export default function ClientPlusMinusPage() {
                       </div>
                     </div>
 
-                    {selectedClientData && (
-                      <div className="row">
-                        <div className="col-12">
-                          <div className="alert alert-info">
-                            <h6>
-                              <strong>Selected Client:</strong> {selectedClientData.name} ({selectedClientData.code})
-                              <br />
-                              <strong>Current Credit Limit:</strong> ₹{selectedClientData.creditLimit.toLocaleString()}
-                              <br />
-                              <strong>Action:</strong> {paymentType === 'lena' ? 'Adding' : 'Subtracting'} ₹{amount || '0'} to/from credit limit
-                            </h6>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+
                   </div>
 
                   <div className="card-footer">

@@ -229,16 +229,6 @@ export default function AllSubLedgerPage() {
 
                   {selectedSubData ? (
                     <>
-                      <div className="alert alert-info">
-                        <h6>
-                          <strong>Selected Sub Agent:</strong> {selectedSubData.name} ({selectedSubData.code})
-                          <br />
-                          <strong>Current Credit Limit:</strong> {formatAmount(selectedSubData.creditLimit)}
-                          <br />
-                          <strong>Total Ledger Entries:</strong> {selectedSubLedger.length}
-                        </h6>
-                      </div>
-
                       {selectedSubLedger.length === 0 ? (
                         <div className="alert alert-warning">
                           <h6>No ledger entries found for this sub agent</h6>

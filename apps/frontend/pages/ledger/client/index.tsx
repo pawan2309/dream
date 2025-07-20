@@ -229,16 +229,6 @@ export default function AllClientLedgerPage() {
 
                   {selectedClientData ? (
                     <>
-                      <div className="alert alert-info">
-                        <h6>
-                          <strong>Selected Client:</strong> {selectedClientData.name} ({selectedClientData.code})
-                          <br />
-                          <strong>Current Credit Limit:</strong> {formatAmount(selectedClientData.creditLimit)}
-                          <br />
-                          <strong>Total Ledger Entries:</strong> {selectedClientLedger.length}
-                        </h6>
-                      </div>
-
                       {selectedClientLedger.length === 0 ? (
                         <div className="alert alert-warning">
                           <h6>No ledger entries found for this client</h6>

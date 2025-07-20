@@ -229,16 +229,6 @@ export default function AllSuperLedgerPage() {
 
                   {selectedSuperData ? (
                     <>
-                      <div className="alert alert-info">
-                        <h6>
-                          <strong>Selected Super Agent:</strong> {selectedSuperData.name} ({selectedSuperData.code})
-                          <br />
-                          <strong>Current Credit Limit:</strong> {formatAmount(selectedSuperData.creditLimit)}
-                          <br />
-                          <strong>Total Ledger Entries:</strong> {selectedSuperLedger.length}
-                        </h6>
-                      </div>
-
                       {selectedSuperLedger.length === 0 ? (
                         <div className="alert alert-warning">
                           <h6>No ledger entries found for this super agent</h6>

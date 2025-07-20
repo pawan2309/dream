@@ -7,12 +7,12 @@ const sidebarLinks = [
   {
     section: 'USER DETAILS',
     links: [
-      { label: 'Collection Master', href: '/user_details/collection', icon: 'fas fa-coins' },
       { label: 'Sub Agent Master', href: '/user_details/sub', icon: 'fas fa-user-secret' },
       { label: 'MasterAgent Master', href: '/user_details/master', icon: 'fas fa-crown' },
       { label: 'SuperAgent Master', href: '/user_details/super', icon: 'fas fa-user-tie' },
       { label: 'Agent Master', href: '/user_details/agent', icon: 'fas fa-user-shield' },
       { label: 'Client Master', href: '/user_details/client', icon: 'fas fa-user' },
+      { label: 'Collection Master', href: '/user_details/collection', icon: 'fas fa-coins' },
     ],
   },
   {
@@ -44,12 +44,12 @@ const sidebarLinks = [
     section: 'LEDGER',
     links: [
       { label: 'My Ledger', href: '/ledger', icon: 'fas fa-angle-right' },
-      { label: 'Client Plus/Minus', href: '/ledger/client/pm', icon: 'fas fa-angle-right' },
-      { label: 'All Client Ledger', href: '/ledger/client', icon: 'fas fa-angle-right' },
       { label: 'All Sub Ledger', href: '/ledger/sub', icon: 'fas fa-angle-right' },
-      { label: 'All Agent Ledger', href: '/ledger/agent', icon: 'fas fa-angle-right' },
-      { label: 'All Super Ledger', href: '/ledger/super', icon: 'fas fa-angle-right' },
       { label: 'All Master Ledger', href: '/ledger/master', icon: 'fas fa-angle-right' },
+      { label: 'All Super Ledger', href: '/ledger/super', icon: 'fas fa-angle-right' },
+      { label: 'All Agent Ledger', href: '/ledger/agent', icon: 'fas fa-angle-right' },
+      { label: 'All Client Ledger', href: '/ledger/client', icon: 'fas fa-angle-right' },
+      { label: 'Client Plus/Minus', href: '/ledger/client/pm', icon: 'fas fa-angle-right' },
     ],
   },
   {
@@ -102,6 +102,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     });
   };
 
+  // -------- Sync Sidebar State on Mount --------
+  useEffect(() => {
+    const isCollapsed = document.body.classList.contains('sidebar-collapse');
+    setSidebarCollapsed(isCollapsed);
+  }, []);
+
   // -------- Get User Data on Mount --------
   useEffect(() => {
     const getUserData = async () => {
@@ -148,7 +154,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       
       // Also store the current navbar state
       sessionStorage.setItem('navbarState', JSON.stringify({
-        sidebarCollapsed: document.body.classList.contains('sidebar-collapse')
+        sidebarCollapsed: sidebarCollapsed
       }));
 
       // Prevent any scroll reset during navigation
@@ -219,8 +225,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const state = JSON.parse(savedNavbarState);
         if (state.sidebarCollapsed) {
           document.body.classList.add('sidebar-collapse');
+          setSidebarCollapsed(true);
         } else {
           document.body.classList.remove('sidebar-collapse');
+          setSidebarCollapsed(false);
         }
       }
     };
@@ -234,14 +242,27 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     };
   }, [router]);
 
+  // -------- Sidebar State --------
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Initialize based on current body class
+    if (typeof window !== 'undefined') {
+      return document.body.classList.contains('sidebar-collapse');
+    }
+    return false;
+  });
+
   // -------- Sidebar Toggle Handler --------
   const toggleSidebar = () => {
     const body = document.body;
-    if (body.classList.contains('sidebar-collapse')) {
-      body.classList.remove('sidebar-collapse');
-    } else {
+    const newCollapsedState = !sidebarCollapsed;
+    
+    if (newCollapsedState) {
       body.classList.add('sidebar-collapse');
+    } else {
+      body.classList.remove('sidebar-collapse');
     }
+    
+    setSidebarCollapsed(newCollapsedState);
   };
 
   // -------- Scroll to Top Function --------
@@ -463,22 +484,31 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           top: 0,
           left: 0,
           height: '100vh',
-          zIndex: 1031
+          zIndex: 1031,
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           {/* Brand Logo */}
-          <Link href="/" className="brand-link bg-indigo text-white">
+          <Link href="/" className="brand-link bg-indigo text-white" style={{
+            display: 'flex',
+            alignItems: 'center',
+            padding: '0 15px',
+            height: '60px',
+            borderBottom: '1px solid rgba(255,255,255,0.1)',
+            flexShrink: 0
+          }}>
             <img 
               src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" 
               alt="AdminLTE Logo"
               className="brand-image img-circle elevation-3" 
-              style={{ opacity: '.8' }}
+              style={{ opacity: '.8', marginRight: '10px' }}
             />
             <span className="brand-text font-weight-light" id="brandName">BETX</span>
           </Link>
 
           {/* Sidebar Navigation Menu */}
-          <div className="sidebar">
-            <nav className="mt-2">
+          <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto' }}>
+            <nav>
               <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
                 {sidebarLinks.map(section => {
                   const isExpanded = expandedSections.has(section.section);
@@ -507,7 +537,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {/* ===================== Main Content Wrapper ===================== */}
         <div className="content-wrapper" style={{
           marginTop: '60px',
-          marginLeft: '250px',
+          marginLeft: sidebarCollapsed ? '0' : '250px',
           minHeight: 'calc(100vh - 60px)',
           transition: 'margin-left 0.3s ease-in-out'
         }}>
@@ -517,7 +547,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
         {/* ===================== Footer ===================== */}
         <footer className="main-footer">
-          <strong>Copyright &copy; 2020-2021 <a href="#" id="siteName">BETX.com</a>.</strong>
+          <strong>Copyright &copy; 2025 <a href="#" id="siteName">BETX.com</a>.</strong>
           All rights reserved.
           <div className="float-right d-none d-sm-inline-block">
             <b>Version</b> 2.0.2
