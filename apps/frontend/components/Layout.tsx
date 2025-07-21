@@ -53,6 +53,12 @@ const sidebarLinks = [
     ],
   },
   {
+    section: 'COMMISSIONS',
+    links: [
+      { label: 'Commission Dashboard', href: '/commissions', icon: 'fas fa-coins' },
+    ],
+  },
+  {
     section: 'OLD DATA',
     links: [
       { label: 'Old Ledger', href: '#', icon: 'fas fa-angle-right' },
@@ -82,7 +88,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   
   // -------- Sidebar Section Expand/Collapse State --------
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([
-    'USER DETAILS', 'GAMES', 'Casino', 'CASH TRANSACTION', 'LEDGER', 'OLD DATA', 'Login Reports'
+    'USER DETAILS', 'GAMES', 'Casino', 'CASH TRANSACTION', 'LEDGER', 'COMMISSIONS', 'OLD DATA', 'Login Reports'
   ]));
   
   // -------- User State --------

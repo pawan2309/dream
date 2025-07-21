@@ -9,6 +9,7 @@ interface Agent {
   name: string;
   code: string;
   creditLimit: number;
+  contactno?: string;
 }
 
 interface LedgerEntry {
@@ -27,6 +28,14 @@ interface AgentWithLedger extends Agent {
   ledger: LedgerEntry[];
 }
 
+interface LenaDenaSummary {
+  name: string;
+  contact: string;
+  openBalance: number;
+  currentBalance: number;
+  closingBalance: number;
+}
+
 export default function AllAgentLedgerPage() {
   const [siteName, setSiteName] = useState('');
   const [brandName, setBrandName] = useState('');
@@ -34,9 +43,6 @@ export default function AllAgentLedgerPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedAgent, setSelectedAgent] = useState('');
-  const [entriesPerPage, setEntriesPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
   const router = useRouter();
 
   useEffect(() => {
@@ -103,40 +109,65 @@ export default function AllAgentLedgerPage() {
     agent.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Get selected agent's ledger
-  const selectedAgentData = agents.find(agent => agent.id === selectedAgent);
-  const selectedAgentLedger = selectedAgentData?.ledger || [];
+  // Calculate Lena He (payments to receive) and Dena He (payments to pay) for all agents
+  const calculateLenaDenaSummary = () => {
+    const lenaHe: LenaDenaSummary[] = [];
+    const denaHe: LenaDenaSummary[] = [];
 
-  // Filter and paginate selected agent's ledger
-  const filteredLedger = selectedAgentLedger.filter(entry => 
-    entry.remark?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.collection.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    filteredAgents.forEach(agent => {
+      const totalCredit = agent.ledger.reduce((sum, entry) => sum + (entry.credit || 0), 0);
+      const totalDebit = agent.ledger.reduce((sum, entry) => sum + (entry.debit || 0), 0);
+      
+      // Opening balance should be the initial credit limit
+      // We need to find the initial credit limit from the first credit transaction
+      const sortedLedger = [...agent.ledger].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const initialCreditEntry = sortedLedger.find(entry => entry.credit > 0);
+      const openingBalance = initialCreditEntry ? initialCreditEntry.credit : agent.creditLimit;
+      
+      // Standard accounting formula: Closing Balance = Opening Balance + Total Deposits - Total Withdrawals
+      // In our context: Closing Balance = Opening Balance + Total Credit - Total Debit
+      const closingBalance = openingBalance + totalCredit - totalDebit;
+      const netAmount = totalCredit - totalDebit;
 
-  const totalPages = Math.ceil(filteredLedger.length / entriesPerPage);
-  const startIndex = (currentPage - 1) * entriesPerPage;
-  const endIndex = startIndex + entriesPerPage;
-  const paginatedLedger = filteredLedger.slice(startIndex, endIndex);
+      const summary: LenaDenaSummary = {
+        name: `${agent.code} ${agent.name}`,
+        contact: agent.contactno || 'N/A',
+        openBalance: openingBalance,
+        currentBalance: Math.abs(netAmount),
+        closingBalance: closingBalance
+      };
 
-  // Reset to first page when search term or selected agent changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, selectedAgent]);
+      if (netAmount > 0) {
+        // This agent owes us money (Lena He - to receive)
+        lenaHe.push(summary);
+      } else if (netAmount < 0) {
+        // We owe this agent money (Dena He - to pay)
+        denaHe.push(summary);
+      }
+    });
 
-  // Reset to first page when entries per page changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [entriesPerPage]);
+    return { lenaHe, denaHe };
+  };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+  const { lenaHe, denaHe } = calculateLenaDenaSummary();
+
+  // Calculate totals
+  const lenaHeTotal = {
+    openBalance: lenaHe.reduce((sum, item) => sum + item.openBalance, 0),
+    currentBalance: lenaHe.reduce((sum, item) => sum + item.currentBalance, 0),
+    closingBalance: lenaHe.reduce((sum, item) => sum + item.closingBalance, 0)
+  };
+
+  const denaHeTotal = {
+    openBalance: denaHe.reduce((sum, item) => sum + item.openBalance, 0),
+    currentBalance: denaHe.reduce((sum, item) => sum + item.currentBalance, 0),
+    closingBalance: denaHe.reduce((sum, item) => sum + item.closingBalance, 0)
   };
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR'
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
@@ -181,7 +212,7 @@ export default function AllAgentLedgerPage() {
             <div className="col-12">
               <div className="card">
                 <div className="card-header">
-                  <h3 className="card-title">Agent Ledger Management</h3>
+                  <h3 className="card-title">Agent Ledger Summary</h3>
                   <div className="card-tools">
                     <div className="input-group input-group-sm" style={{ width: 250 }}>
                       <input
@@ -208,148 +239,141 @@ export default function AllAgentLedgerPage() {
                     </div>
                   )}
                   
-                  <div className="row mb-3">
-                    <div className="col-md-6">
-                      <label htmlFor="agentSelect">Select Agent:</label>
-                      <select
-                        id="agentSelect"
-                        className="form-control"
-                        value={selectedAgent}
-                        onChange={(e) => setSelectedAgent(e.target.value)}
-                      >
-                        <option value="">Choose an agent to view ledger...</option>
-                        {filteredAgents.map(agent => (
-                          <option key={agent.id} value={agent.id}>
-                            {agent.code} - {agent.name} (₹{agent.creditLimit.toLocaleString()})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {selectedAgentData ? (
-                    <>
-                      {selectedAgentLedger.length === 0 ? (
-                        <div className="alert alert-warning">
-                          <h6>No ledger entries found for this agent</h6>
+                  {/* Lena He Table - Payments to Receive */}
+                  <div className="row mb-4">
+                    <div className="col-12">
+                      <div className="card card-success">
+                        <div className="card-header">
+                          <h3 className="card-title">
+                            <i className="fas fa-arrow-down text-success mr-2"></i>
+                            PAYMENT RECEIVING FROM (LENA HE)
+                          </h3>
                         </div>
-                      ) : (
-                        <>
+                        <div className="card-body p-0">
                           <div className="table-responsive">
-                            <table className="table table-bordered table-striped">
-                              <thead>
+                            <table className="table table-bordered table-striped mb-0">
+                              <thead className="bg-success text-white">
                                 <tr>
-                                  <th>#</th>
-                                  <th>Date & Time</th>
-                                  <th>Type</th>
-                                  <th>Collection</th>
-                                  <th>Debit</th>
-                                  <th>Credit</th>
-                                  <th>Balance After</th>
-                                  <th>Remark</th>
+                                  <th>Name</th>
+                                  <th>Contact</th>
+                                  <th>Opening Balance</th>
+                                  <th>Current Balance</th>
+                                  <th>Closing Balance</th>
                                 </tr>
                               </thead>
                               <tbody>
-                                {paginatedLedger.map((entry, index) => (
-                                  <tr key={entry.id}>
-                                    <td>{startIndex + index + 1}</td>
-                                    <td>{formatDate(entry.createdAt)}</td>
-                                    <td>
-                                      <span className={`badge badge-${entry.type === 'ADJUSTMENT' ? 'warning' : 'info'}`}>
-                                        {entry.type}
-                                      </span>
-                                    </td>
-                                    <td>{entry.collection}</td>
-                                    <td className="text-danger">
-                                      {entry.debit > 0 ? formatAmount(entry.debit) : '-'}
-                                    </td>
-                                    <td className="text-success">
-                                      {entry.credit > 0 ? formatAmount(entry.credit) : '-'}
-                                    </td>
-                                    <td className="font-weight-bold">
-                                      {formatAmount(entry.balanceAfter)}
-                                    </td>
-                                    <td>{entry.remark || '-'}</td>
+                                {lenaHe.map((item, index) => (
+                                  <tr key={index}>
+                                    <td>{item.name}</td>
+                                    <td>{item.contact}</td>
+                                    <td className="text-right">{formatAmount(item.openBalance)}</td>
+                                    <td className="text-right">{formatAmount(item.currentBalance)}</td>
+                                    <td className="text-right">{formatAmount(item.closingBalance)}</td>
                                   </tr>
                                 ))}
+                                {lenaHe.length === 0 && (
+                                  <tr>
+                                    <td colSpan={5} className="text-center text-muted">
+                                      No payments to receive
+                                    </td>
+                                  </tr>
+                                )}
                               </tbody>
+                              <tfoot className="bg-light">
+                                <tr className="font-weight-bold">
+                                  <td colSpan={2} className="text-right">Total:</td>
+                                  <td className="text-right">{formatAmount(lenaHeTotal.openBalance)}</td>
+                                  <td className="text-right">{formatAmount(lenaHeTotal.currentBalance)}</td>
+                                  <td className="text-right">{formatAmount(lenaHeTotal.closingBalance)}</td>
+                                </tr>
+                              </tfoot>
                             </table>
                           </div>
-                          
-                          {/* Pagination */}
-                          <div className="d-flex justify-content-between align-items-center mt-3">
-                            <div>
-                              <label>
-                                Show{' '}
-                                <select
-                                  value={entriesPerPage}
-                                  onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                                  className="form-control form-control-sm d-inline-block"
-                                  style={{ width: 'auto' }}
-                                >
-                                  <option value={10}>10</option>
-                                  <option value={25}>25</option>
-                                  <option value={50}>50</option>
-                                  <option value={100}>100</option>
-                                </select>
-                                {' '}entries
-                              </label>
-                            </div>
-                            
-                            <div>
-                              <p>
-                                Showing {startIndex + 1} to {Math.min(endIndex, filteredLedger.length)} of {filteredLedger.length} entries
-                              </p>
-                            </div>
-                            
-                            <div>
-                              <nav>
-                                <ul className="pagination pagination-sm">
-                                  <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
-                                    <button
-                                      className="page-link"
-                                      onClick={() => setCurrentPage(currentPage - 1)}
-                                      disabled={currentPage === 1}
-                                    >
-                                      Previous
-                                    </button>
-                                  </li>
-                                  
-                                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                                    const page = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
-                                    return (
-                                      <li key={page} className={`page-item ${page === currentPage ? 'active' : ''}`}>
-                                        <button
-                                          className="page-link"
-                                          onClick={() => setCurrentPage(page)}
-                                        >
-                                          {page}
-                                        </button>
-                                      </li>
-                                    );
-                                  })}
-                                  
-                                  <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
-                                    <button
-                                      className="page-link"
-                                      onClick={() => setCurrentPage(currentPage + 1)}
-                                      disabled={currentPage === totalPages}
-                                    >
-                                      Next
-                                    </button>
-                                  </li>
-                                </ul>
-                              </nav>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  ) : (
-                    <div className="alert alert-info">
-                      <h6>Please select an agent to view their ledger entries</h6>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Dena He Table - Payments to Pay */}
+                  <div className="row">
+                    <div className="col-12">
+                      <div className="card card-danger">
+                        <div className="card-header">
+                          <h3 className="card-title">
+                            <i className="fas fa-arrow-up text-danger mr-2"></i>
+                            PAYMENT PAID TO (DENA HE)
+                          </h3>
+                        </div>
+                        <div className="card-body p-0">
+                          <div className="table-responsive">
+                            <table className="table table-bordered table-striped mb-0">
+                              <thead className="bg-danger text-white">
+                                <tr>
+                                  <th>Name</th>
+                                  <th>Contact</th>
+                                  <th>Opening Balance</th>
+                                  <th>Current Balance</th>
+                                  <th>Closing Balance</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {denaHe.map((item, index) => (
+                                  <tr key={index}>
+                                    <td>{item.name}</td>
+                                    <td>{item.contact}</td>
+                                    <td className="text-right">{formatAmount(item.openBalance)}</td>
+                                    <td className="text-right">{formatAmount(item.currentBalance)}</td>
+                                    <td className="text-right">{formatAmount(item.closingBalance)}</td>
+                                  </tr>
+                                ))}
+                                {denaHe.length === 0 && (
+                                  <tr>
+                                    <td colSpan={5} className="text-center text-muted">
+                                      No payments to pay
+                                    </td>
+                                  </tr>
+                                )}
+                              </tbody>
+                              <tfoot className="bg-light">
+                                <tr className="font-weight-bold">
+                                  <td colSpan={2} className="text-right">Total:</td>
+                                  <td className="text-right">{formatAmount(denaHeTotal.openBalance)}</td>
+                                  <td className="text-right">{formatAmount(denaHeTotal.currentBalance)}</td>
+                                  <td className="text-right">{formatAmount(denaHeTotal.closingBalance)}</td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="row mt-4">
+                    <div className="col-md-6">
+                      <div className="info-box bg-success">
+                        <span className="info-box-icon">
+                          <i className="fas fa-arrow-down"></i>
+                        </span>
+                        <div className="info-box-content">
+                          <span className="info-box-text">Total to Receive (Lena He)</span>
+                          <span className="info-box-number">₹{formatAmount(lenaHeTotal.currentBalance)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-6">
+                      <div className="info-box bg-danger">
+                        <span className="info-box-icon">
+                          <i className="fas fa-arrow-up"></i>
+                        </span>
+                        <div className="info-box-content">
+                          <span className="info-box-text">Total to Pay (Dena He)</span>
+                          <span className="info-box-number">₹{formatAmount(denaHeTotal.currentBalance)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

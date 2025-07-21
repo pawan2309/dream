@@ -100,18 +100,33 @@ export default function CashMasterPage() {
     setError('');
     setMessage('');
 
+    // Validate required fields
+    if (!form.remark || form.remark.trim().length === 0) {
+      setError('Remark is required');
+      setSubmitting(false);
+      return;
+    }
+
     try {
+      const paymentType = form.paymentType === 'Payment Paid' ? 'dena' : 'lena';
+      
+      console.log('Form data:', form);
+      console.log('Converted paymentType:', paymentType);
+      
+      const requestBody = {
+        amount: parseFloat(form.amount),
+        paymentType,
+        remark: form.remark.trim(),
+      };
+      
+      console.log('Request body:', requestBody);
+      
       const response = await fetch(`/api/users/${form.master}/manual-ledger`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          amount: parseFloat(form.amount),
-          type: form.paymentType,
-          remark: form.remark,
-          collection: form.collection,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
@@ -163,12 +178,11 @@ export default function CashMasterPage() {
         <div className="container-fluid">
           <div className="row">
             <div className="col-12">
-              <form id="myForm" onSubmit={handleSubmit}>
-                <div className="form-row">
-                  <div className="col-12 mb-3">
-                    <h4 className="text-capitalize">Master Ledger</h4>
-                  </div>
-                  <div className="form-row col-md-12">
+              <div className="card">
+                <form id="myForm" onSubmit={handleSubmit}>
+                <div className="card-header">
+                  <h4 className="text-capitalize">Master Ledger</h4>
+                  <div className="form-row col-md-9">
                     <div className="form-group col-md-4">
                       <label htmlFor="master" className="text-capitalize">Master</label>
                       <select 
@@ -237,6 +251,7 @@ export default function CashMasterPage() {
                         name="remark" 
                         value={form.remark} 
                         onChange={handleChange} 
+                        required
                       />
                     </div>
                     <div className="form-group col-md-4">
@@ -260,6 +275,7 @@ export default function CashMasterPage() {
                     </div>
                   </div>
                 </div>
+                {/* /.card-header */}
                 
                 {error && (
                   <div className="alert alert-danger">
@@ -272,8 +288,9 @@ export default function CashMasterPage() {
                   </div>
                 )}
               </form>
+                </div>
+              </div>
             </div>
-          </div>
 
           {/* Transaction History Table */}
           {form.master && (
@@ -292,7 +309,7 @@ export default function CashMasterPage() {
                     </div>
                   ) : (
                     <div className="table-responsive">
-                      <table className="table table-bordered table-striped">
+                      <table id="example1" className="table table-bordered table-striped">
                         <thead>
                           <tr>
                             <th>#</th>
@@ -304,28 +321,33 @@ export default function CashMasterPage() {
                             <th>Payment Type</th>
                             <th>Remark</th>
                           </tr>
+                          <tr>
+                            <th></th>
+                            <th></th>
+                            <th className="text-blue">Total Amount</th>
+                            <th>{totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</th>
+                            <th>{totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</th>
+                            <th className={currentBalance < 0 ? 'text-danger' : 'text-blue'}>
+                              {currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            </th>
+                            <th></th>
+                            <th></th>
+                          </tr>
                         </thead>
                         <tbody>
-                          {/* Total Amount Row */}
-                          <tr className="table-info font-weight-bold">
-                            <td colSpan={3}>Total Amount</td>
-                            <td>₹{totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                            <td>₹{totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                            <td className="text-primary">₹{currentBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                            <td></td>
-                            <td></td>
-                          </tr>
                           
                           {/* Individual Transaction Rows */}
                           {ledgerEntries.map((entry, index) => (
                             <tr key={entry.id}>
                               <td>{index + 1}</td>
                               <td>{new Date(entry.createdAt).toLocaleString('en-IN')}</td>
-                              <td>{entry.collection}</td>
-                              <td>₹{(entry.debit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td>₹{(entry.credit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td>₹{(entry.balanceAfter || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                              <td>{entry.type}</td>
+                              <td>CA1 CASH</td>
+                              <td>{(entry.debit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                              <td>{(entry.credit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                              <td className={(entry.balanceAfter || 0) < 0 ? 'text-danger' : ''}>
+                                {(entry.balanceAfter || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                              </td>
+                              <td>{entry.credit > 0 ? 'lena' : 'dena'}</td>
                               <td>{entry.remark || ''}</td>
                             </tr>
                           ))}
@@ -336,6 +358,8 @@ export default function CashMasterPage() {
                             </tr>
                           )}
                         </tbody>
+                        <tfoot>
+                        </tfoot>
                       </table>
                     </div>
                   )}
