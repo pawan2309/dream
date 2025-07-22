@@ -29,6 +29,10 @@ model User {
   session_commission_type String               @default("No Comm")
   sessioncommission       Float                @default(0)
   share                   Float                @default(0)
+  commissionType          String?
+  casinoStatus            Boolean?
+  matchCommission         Float?
+  sessionCommission       Float?
   creditLimit             Float                @default(0)
   exposure                Float                @default(0)
   bets                    Bet[]
@@ -42,16 +46,21 @@ model User {
 model Ledger {
   id              String     @id @default(uuid())
   userId          String
-  collection      String
-  debit           Float      @default(0)
-  credit          Float      @default(0)
+  sourceUserId    String?     // Who triggered this (e.g., downline user)
+  matchId         String?     // Match or game ID
+  collection      String?     // Payment method / type of fund (e.g., CA1 CASH)
+  debit           Float       @default(0)
+  credit          Float       @default(0)
   balanceAfter    Float
   type            LedgerType
+  transactionType String?     // More granular info if needed (e.g., casino, cricket, session, bonus)
   remark          String?
-  createdAt       DateTime   @default(now())
-  referenceId     String?
-  transactionType String?
-  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId     String?     // To trace back to bet or original PnL record
+  createdAt       DateTime    @default(now())
+
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
 
 model Match {
@@ -108,7 +117,9 @@ model LoginSession {
 }
 
 enum Role {
-  BOSS
+  ADMIN
+  SUPER_ADMIN
+  SUB_OWNER
   SUB
   MASTER
   SUPER_AGENT
@@ -117,11 +128,16 @@ enum Role {
 }
 
 enum LedgerType {
-  DEPOSIT
-  WITHDRAWAL
-  WIN
-  LOSS
-  ADJUSTMENT
+  DEPOSIT         // Manual or online deposit
+  WITHDRAWAL      // Manual or online withdrawal
+  WIN             // User won money
+  LOSS            // User lost money
+  ADJUSTMENT      // Manual balance correction
+
+  LIMIT_UPDATE    // Credit limit or exposure changed by upline
+  PNL_CREDIT      // Profit earned from downline's loss (e.g., agent's share)
+  PNL_DEBIT       // Loss paid because downline won (e.g., agent owes)
+  SETTLEMENT      // Weekly/monthly dues manually settled
 }
 
 enum MatchStatus {
