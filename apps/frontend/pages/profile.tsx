@@ -103,11 +103,33 @@ export default function ProfilePage() {
                 <div className="card card-primary card-outline">
                   <div className="card-body box-profile">
                     <div className="text-center">
-                      <img 
-                        className="profile-user-img img-fluid img-circle"
-                        src="/adminlite/dist/img/user4-128x128.jpg"
-                        alt="User profile picture"
-                      />
+                      {user.profileImage ? (
+                        <img
+                          className="profile-user-img img-fluid img-circle"
+                          src={user.profileImage}
+                          alt="User profile picture"
+                        />
+                      ) : (
+                        <div
+                          className="profile-user-img img-fluid img-circle d-flex align-items-center justify-content-center"
+                          style={{
+                            width: 128,
+                            height: 128,
+                            background: '#007bff',
+                            color: '#fff',
+                            fontSize: 48,
+                            fontWeight: 'bold',
+                            margin: '0 auto',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {((user.name || user.username || '')
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .join('')
+                            .substring(0, 2)) || 'U'}
+                        </div>
+                      )}
                     </div>
 
                     <h3 className="profile-username text-center">
@@ -158,7 +180,7 @@ export default function ProfilePage() {
                     <hr />
 
                     <strong><i className="fas fa-coins"></i> Current Limit</strong>
-                    <p className="text-muted">₹{user.balance?.toLocaleString() || '0'}</p>
+                    <p className="text-muted">{user.creditLimit?.toLocaleString() || '0'}</p>
 
                     <hr />
 

@@ -386,6 +386,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     };
   }, []);
 
+  // Add after other useState declarations
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 992); // Bootstrap lg breakpoint
+    window.addEventListener('resize', handleResize);
+    handleResize();
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Close sidebar on route change (mobile only)
+  useEffect(() => {
+    if (isMobile) setMobileSidebarOpen(false);
+    // eslint-disable-next-line
+  }, [router.asPath]);
+
   return (
     <div className="hold-transition sidebar-mini">
       <div className="wrapper">
@@ -399,14 +417,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             left: 0,
             right: 0,
             zIndex: 1030,
-            minHeight: '60px',
+            minHeight: '64px',
+            height: '64px',
             transition: 'none',
-            backgroundColor: 'white',
+            backgroundColor: '#673ab7',
+            color: '#fff',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
             marginTop: 0,
             marginBottom: 0,
             transform: 'none',
-            willChange: 'auto'
+            willChange: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
           {/* Left navbar links */}
@@ -414,7 +437,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <li className="nav-item">
               <a className="nav-link" href="#" role="button" onClick={(e) => {
                 e.preventDefault();
-                toggleSidebar();
+                if (isMobile) {
+                  setMobileSidebarOpen(true);
+                } else {
+                  toggleSidebar();
+                }
               }} style={{ 
                 position: 'relative', 
                 zIndex: 1000,
@@ -431,43 +458,100 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           {/* Right navbar links (User Dropdown) */}
           <ul className="navbar-nav ml-auto">
             <li className="nav-item dropdown user-menu">
-              <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown">
-                <img 
-                  src="https://adminlte.io/themes/v3/dist/img/user2-160x160.jpg"
-                  className="user-image img-circle elevation-2" 
-                  alt="User Image"
-                />
-                <span className="d-none d-md-inline">
-                  {isLoading ? 'Loading...' : (user?.name || user?.username || 'User')}
-                </span>
+              <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown" style={{
+                padding: 0,
+                background: 'none',
+                border: 'none',
+                boxShadow: 'none',
+                height: '50px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#e0e0e0',
+                  color: '#222',
+                  borderRadius: 24,
+                  height: 40,
+                  padding: '15px',
+                  boxSizing: 'border-box',
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
+                  minWidth: 120,
+                }}>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '50%',
+                    background: '#007bff',
+                    color: '#fff',
+                    fontSize: 18,
+                    fontWeight: 'bold',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12,
+                    textTransform: 'uppercase',
+                  }}>
+                    {((user?.name || user?.username || '')
+                      .split(' ')
+                      .map((n: string) => n[0])
+                      .join('')
+                      .substring(0, 2)) || 'U'}
+                  </div>
+                  <span style={{
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    fontWeight: 600,
+                    fontSize: 18,
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}>{user?.name || user?.username || 'User'}</span>
+                </div>
               </a>
-              <ul className="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                {/* User image */}
-                <li className="user-header bg-primary">
-                  <img 
-                    src="https://adminlte.io/themes/v3/dist/img/user2-160x160.jpg"
-                    className="img-circle elevation-2"
-                    alt="User Image"
-                  />
-                  <p>
-                    {isLoading ? 'Loading...' : `${user?.username || 'User'} ${user?.name || ''}`}
-                  </p>
+              <ul className="dropdown-menu dropdown-menu-lg dropdown-menu-right" style={{ minWidth: 260, padding: 0, borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
+                <li className="user-header" style={{ background: '#e0e0e0', color: '#222', borderTopLeftRadius: 12, borderTopRightRadius: 12, padding: 15, textAlign: 'center' }}>
+                  <div
+                    style={{
+                      width: 72,
+                      height: 72,
+                      borderRadius: '50%',
+                      background: '#007bff',
+                      color: '#fff',
+                      fontSize: 32,
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 12px auto',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {((user?.name || user?.username || '')
+                      .split(' ')
+                      .map((n: string) => n[0])
+                      .join('')
+                      .substring(0, 2)) || 'U'}
+                  </div>
+                  <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 4 }}>{user?.name || user?.username || 'User'}</div>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>ID: {user?.username || user?.id || '-'}</div>
+                  <div style={{ fontSize: 13, color: '#555' }}>Role: {user?.role || '-'}</div>
                 </li>
-                
-                {/* Menu Footer*/}
-                <li className="user-footer">
-                  <Link href="/profile" className="btn btn-default btn-flat">Profile</Link>
-                  <a href="#" className="btn btn-default btn-flat float-right" 
-                     onClick={async (e) => {
-                       e.preventDefault();
-                       try {
-                         await fetch('/api/auth/logout', { method: 'POST' });
-                         router.push('/login');
-                       } catch (error) {
-                         console.error('Logout error:', error);
-                         router.push('/login');
-                       }
-                     }}>
+                <li className="user-footer" style={{ display: 'flex', justifyContent: 'space-between', padding: 16, borderBottomLeftRadius: 12, borderBottomRightRadius: 12, background: '#fff' }}>
+                  <Link href="/profile" className="btn btn-default btn-flat" style={{ width: '48%' }}>Profile</Link>
+                  <a href="#" className="btn btn-default btn-flat float-right" style={{ width: '48%' }}
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      try {
+                        await fetch('/api/auth/logout', { method: 'POST' });
+                        router.push('/login');
+                      } catch (error) {
+                        console.error('Logout error:', error);
+                        router.push('/login');
+                      }
+                    }}>
                     Sign out
                   </a>
                 </li>
@@ -477,15 +561,24 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </nav>
 
         {/* ===================== Sidebar ===================== */}
-        <aside className="main-sidebar sidebar-light-indigo elevation-4" style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          height: '100vh',
-          zIndex: 1031,
-          display: 'flex',
-          flexDirection: 'column'
-        }}>
+        <aside
+          className="main-sidebar sidebar-light-indigo elevation-4"
+          style={{
+            position: isMobile ? 'fixed' : 'fixed',
+            top: 0,
+            left: isMobile ? (mobileSidebarOpen ? 0 : '-80vw') : 0,
+            height: '100vh',
+            zIndex: 1031,
+            display: 'flex',
+            flexDirection: 'column',
+            width: isMobile ? '80vw' : '250px',
+            maxWidth: '100vw',
+            minWidth: isMobile ? '0' : '250px',
+            background: '#fff',
+            boxShadow: isMobile && mobileSidebarOpen ? '2px 0 8px rgba(0,0,0,0.15)' : undefined,
+            transition: 'left 0.3s cubic-bezier(.4,0,.2,1)',
+          }}
+        >
           {/* Brand Logo */}
           <Link href="/" className="brand-link bg-indigo text-white" style={{
             display: 'flex',
@@ -503,7 +596,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             />
             <span className="brand-text font-weight-light" id="brandName">BETX</span>
           </Link>
-
           {/* Sidebar Navigation Menu */}
           <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto' }}>
             <nav>
@@ -518,7 +610,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       </li>
                       {isExpanded && section.links.map(link => (
                         <li className="nav-item" key={link.label}>
-                          <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}>
+                          <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}
+                            onClick={() => { if (isMobile) setMobileSidebarOpen(false); }}
+                          >
                             <i className={`nav-icon ${link.icon}`} style={{ fontSize: '12px', marginRight: '8px' }}></i>
                             <p style={{ margin: '0', fontSize: '13px' }}>{link.label}</p>
                           </Link>
@@ -556,6 +650,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <aside className="control-sidebar control-sidebar-dark">
           {/* Control sidebar content goes here */}
         </aside>
+
+        {/* Render overlay for mobile sidebar */}
+        {isMobile && mobileSidebarOpen && (
+          <div
+            onClick={() => setMobileSidebarOpen(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              background: 'rgba(0,0,0,0.3)',
+              zIndex: 1030,
+            }}
+          />
+        )}
       </div>
     </div>
   );

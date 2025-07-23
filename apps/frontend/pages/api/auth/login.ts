@@ -82,6 +82,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           name: user.name,
           role: user.role,
           isActive: user.isActive,
+          profileImage: user.profileImage || null, // add profile image
+          creditLimit: user.creditLimit || 0,      // add credit limit
         }
       },
       JWT_SECRET,
