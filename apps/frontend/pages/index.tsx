@@ -24,12 +24,12 @@ const CARD_COLORS = [
 // ===================== Dashboard Card Maps =====================
 // These define the sections and navigation for the dashboard
 const userMap = [
-  { label: 'Sub Agent Master', value: 'user_details/sub' },
-  { label: 'MasterAgent Master', value: 'user_details/master' },
-  { label: 'SuperAgent Master', value: 'user_details/super' },
-  { label: 'Agent Master', value: 'user_details/agent' },
-  { label: 'Client Master', value: 'user_details/client' },
-  { label: 'Collection Master', value: 'user_details/collection' },
+  { label: 'Sub Agent Master', value: '/user_details/sub' },
+  { label: 'MasterAgent Master', value: '/user_details/master' },
+  { label: 'SuperAgent Master', value: '/user_details/super' },
+  { label: 'Agent Master', value: '/user_details/agent' },
+  { label: 'Client Master', value: 'user_details/client' }
+  // Removed Collection Master
 ];
 const ledgerMap = [
   { label: 'My Ledger', value: 'ledger' },

@@ -78,7 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         debit: result === 'LOST' ? bet.stake : 0,
         balanceAfter: 0, // Will be calculated by balance update logic
         type: result === 'WON' ? 'WIN' : 'LOSS',
-        remark: `Bet ${result.toLowerCase()} - Stake: ₹${bet.stake}, Win: ₹${actualWin}`,
+        remark: `Bet ${result.toLowerCase()} - Stake: ${bet.stake}, Win: ${actualWin}`,
         referenceId: betId,
         transactionType: 'BET_SETTLEMENT'
       }

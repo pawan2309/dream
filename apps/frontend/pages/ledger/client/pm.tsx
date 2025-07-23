@@ -95,7 +95,7 @@ export default function ClientPlusMinusPage() {
       const data = await res.json();
 
       if (data.success) {
-        setSuccess(`Ledger entry added successfully. New limit: ₹${data.newLimit.toLocaleString()}`);
+        setSuccess(`Ledger entry added successfully. New limit: ${data.newLimit.toLocaleString()}`);
         // Reset form
         setAmount('');
         setRemark('');
@@ -189,7 +189,7 @@ export default function ClientPlusMinusPage() {
                             <option value="">Choose a client...</option>
                             {clients.map(client => (
                               <option key={client.id} value={client.id}>
-                                {client.code} - {client.name} (Limit: ₹{client.creditLimit.toLocaleString()})
+                                {client.code} - {client.name} (Limit: {client.creditLimit.toLocaleString()})
                               </option>
                             ))}
                           </select>

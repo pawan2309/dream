@@ -190,7 +190,7 @@ export default function CashAgentPage() {
                         <option value="">Select Agent...</option>
                         {agents.map(agent => (
                           <option key={agent.id} value={agent.id}>
-                            {agent.code} - {agent.name} (₹{agent.creditLimit.toLocaleString()})
+                            {agent.code} - {agent.name} ({agent.creditLimit.toLocaleString()})
                           </option>
                         ))}
                       </select>

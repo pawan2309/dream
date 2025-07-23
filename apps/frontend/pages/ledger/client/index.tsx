@@ -358,7 +358,7 @@ export default function AllClientLedgerPage() {
                         </span>
                         <div className="info-box-content">
                           <span className="info-box-text">Total to Receive (Lena He)</span>
-                          <span className="info-box-number">₹{formatAmount(lenaHeTotal.currentBalance)}</span>
+                          <span className="info-box-number">{formatAmount(lenaHeTotal.currentBalance)}</span>
                         </div>
                       </div>
                     </div>
@@ -369,7 +369,7 @@ export default function AllClientLedgerPage() {
                         </span>
                         <div className="info-box-content">
                           <span className="info-box-text">Total to Pay (Dena He)</span>
-                          <span className="info-box-number">₹{formatAmount(denaHeTotal.currentBalance)}</span>
+                          <span className="info-box-number">{formatAmount(denaHeTotal.currentBalance)}</span>
                         </div>
                       </div>
                     </div>

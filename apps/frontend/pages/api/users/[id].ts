@@ -1,53 +1,46 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma';
+import bcrypt from 'bcrypt';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
-  try {
-    const { id } = req.query;
-
-    if (!id || typeof id !== 'string') {
-      return res.status(400).json({ message: 'User ID is required' });
+  const { id } = req.query;
+  if (req.method === 'GET') {
+    try {
+      const user = await prisma.user.findUnique({ where: { id: id as string } });
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+      return res.status(200).json({ success: true, user });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to fetch user', error: (error as Error).message });
     }
-
-    const user = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        code: true,
-        contactno: true,
-        role: true,
-        isActive: true,
-        balance: true,
-        creditLimit: true,
-        share: true,
-        createdAt: true,
-        updatedAt: true
-      } as any
-    });
-
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    return res.status(200).json({ 
-      success: true,
-      user 
-    });
-
-  } catch (error) {
-    console.error('Error fetching user:', error);
-    return res.status(500).json({ 
-      success: false,
-      message: 'Internal server error' 
-    });
-  } finally {
-    await prisma.$disconnect();
   }
+  if (req.method === 'PUT') {
+    try {
+      const { name, contactno, share, matchcommission, sessioncommission, casinocommission, commissionType, casinoStatus, matchCommission, sessionCommission, password } = req.body;
+      // Prepare data object
+      const dataToUpdate: any = {
+        name,
+        contactno,
+        share: parseFloat(share) || 0,
+        matchcommission: parseFloat(matchcommission) || 0,
+        sessioncommission: parseFloat(sessioncommission) || 0,
+        casinocommission: parseFloat(casinocommission) || 0,
+        commissionType: commissionType || null,
+        casinoStatus: typeof casinoStatus === 'boolean' ? casinoStatus : (casinoStatus === 'true'),
+        matchCommission: matchCommission !== undefined ? parseFloat(matchCommission) : null,
+        sessionCommission: sessionCommission !== undefined ? parseFloat(sessionCommission) : null
+      };
+      // If password is provided and not empty, hash and update
+      if (password && password.length >= 6) {
+        dataToUpdate.password = await bcrypt.hash(password, 10);
+      }
+      const user = await prisma.user.update({
+        where: { id: id as string },
+        data: dataToUpdate,
+      });
+      return res.status(200).json({ success: true, user });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: 'Failed to update user', error: (error as Error).message });
+    }
+  }
+  return res.status(405).json({ success: false, message: 'Method not allowed' });
 } 

@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '../../../../lib/prisma';
+import { LedgerType } from '@prisma/client';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -15,7 +16,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const ledger = await prisma.ledger.findMany({
       where: {
         userId: id,
-        collection: 'LIMIT_UPDATE',
+        type: {
+          in: [
+            LedgerType.DEPOSIT,
+            LedgerType.WITHDRAWAL,
+            LedgerType.LIMIT_UPDATE,
+            LedgerType.ADJUSTMENT,
+            LedgerType.SETTLEMENT,
+          ],
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

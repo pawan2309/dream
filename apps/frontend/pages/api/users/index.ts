@@ -5,7 +5,9 @@ import bcrypt from 'bcrypt';
 // Function to get role prefix (3 letters)
 function getRolePrefix(role: string): string {
   const rolePrefixes: { [key: string]: string } = {
-    'BOSS': 'BOS',
+    'ADMIN': 'ADM',
+    'SUPER_ADMIN': 'SUD',
+    'SUB_OWNER': 'SOW',
     'SUB': 'SUB', 
     'MASTER': 'MAS',
     'SUPER_AGENT': 'SUP',
@@ -34,12 +36,15 @@ function generateCode(role: string, existingCodes: string[] = []) {
 
 async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === 'GET') {
-    // List users with optional role filtering
+    // List users with optional role and parentId filtering
     try {
-      const { role } = req.query;
+      const { role, parentId } = req.query;
       let whereClause: any = {};
       if (role && typeof role === 'string') {
         whereClause.role = role as any;
+      }
+      if (parentId && typeof parentId === 'string') {
+        whereClause.parentId = parentId;
       }
       const users = await prisma.user.findMany({
         where: whereClause,
@@ -53,7 +58,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           isActive: true,
           createdAt: true,
           code: true,
-          contactno: true
+          contactno: true,
+          share: true, // Ensure share is included
+          matchCommission: true,
+          sessionCommission: true,
+          parentId: true, // <-- Add this line
         } as any,
         orderBy: { createdAt: 'desc' }
       });
@@ -82,7 +91,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         matchcommission,
         sessioncommission,
         casinocommission,
-        parentId
+        parentId,
+        commissionType,
+        casinoStatus,
+        matchCommission,
+        sessionCommission
       } = req.body;
 
       console.log('Extracted fields:', { role, name, contactno, parentId });
@@ -110,13 +123,50 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       console.log('Generated code:', code);
       console.log('Hashed password length:', hashedPassword.length);
 
+      // Get the id of the currently logged-in user from the session
+      const session = req.cookies['betx_session'];
+      let creatorId = null;
+      if (session) {
+        try {
+          const jwt = require('jsonwebtoken');
+          const decoded = jwt.verify(session, process.env.JWT_SECRET || 'dev_secret');
+          creatorId = decoded.user?.id || null;
+        } catch (e) {
+          creatorId = null;
+        }
+      }
+
+      // Ensure parentId is a valid UUID, not a role name
+      let resolvedParentId = null;
+      if (typeof parentId !== 'undefined' && parentId !== null) {
+        // If parentId looks like a UUID, use it directly
+        const uuidRegex = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+        if (uuidRegex.test(parentId)) {
+          resolvedParentId = parentId;
+        } else {
+          // If parentId is a role name, look up the first user with that role
+          const parentUser = await prisma.user.findFirst({ where: { role: parentId } });
+          if (parentUser) {
+            resolvedParentId = parentUser.id;
+          } else {
+            return res.status(400).json({ success: false, message: `No user found with role ${parentId} to use as parent.` });
+          }
+        }
+      } else {
+        // Determine if the new user is a top-level role
+        const topLevelRoles = ['SUB_OWNER']; // Add other top-level roles if needed
+        const isTopLevel = topLevelRoles.includes(role);
+        resolvedParentId = isTopLevel ? null : creatorId;
+      }
+
       // Create user with all fields
       const userData = {
         username,
         name,
         password: hashedPassword,
         role: role as any, // Cast to Role enum
-        parentId: parentId || null,
+        parentId: resolvedParentId,
+        creditLimit: req.body.creditLimit !== undefined ? Number(req.body.creditLimit) : 0,
         balance: 0,
         isActive: true,
         code,
@@ -129,7 +179,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
         session_commission_type: session_commission_type || "No Comm",
         matchcommission: parseFloat(matchcommission) || 0,
         sessioncommission: parseFloat(sessioncommission) || 0,
-        casinocommission: parseFloat(casinocommission) || 0
+        casinocommission: parseFloat(casinocommission) || 0,
+        commissionType: commissionType || null,
+        casinoStatus: typeof casinoStatus === 'boolean' ? casinoStatus : (casinoStatus === 'true'),
+        matchCommission: matchCommission !== undefined ? parseFloat(matchCommission) : null,
+        sessionCommission: sessionCommission !== undefined ? parseFloat(sessionCommission) : null
       };
 
       console.log('Creating user with data:', userData);
@@ -137,6 +191,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const user = await prisma.user.create({
         data: userData
       });
+
+      // Create a ledger entry for initial creditLimit if > 0
+      if (user.creditLimit > 0) {
+        // Fetch parent/creator user info if available
+        let parentName = 'System';
+        if (user.parentId) {
+          const parentUser = await prisma.user.findUnique({ where: { id: user.parentId } });
+          if (parentUser) {
+            parentName = `${parentUser.code || ''} ${parentUser.name || ''}`.trim();
+          }
+        }
+        await prisma.ledger.create({
+          data: {
+            userId: user.id,
+            collection: 'LIMIT_UPDATE',
+            debit: 0,
+            credit: user.creditLimit,
+            balanceAfter: user.creditLimit,
+            type: 'ADJUSTMENT',
+            remark: `Coins deposit from 0 to ${user.creditLimit} updated From ${parentName}`,
+          }
+        });
+      }
 
       console.log('User created successfully:', user.id);
 

@@ -18,41 +18,45 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const token = cookies[SESSION_COOKIE];
 
     if (!token) {
+      console.error('No session token found in cookies:', cookies);
       return res.status(401).json({ success: false, message: 'Not authenticated' });
     }
 
-    const payload = jwt.verify(token, JWT_SECRET) as any;
-    const userId = payload.id;
+    let payload, sessionUserId;
+    try {
+      payload = jwt.verify(token, JWT_SECRET);
+      if (typeof payload === 'object' && payload !== null && 'user' in payload && payload.user && 'id' in payload.user) {
+        sessionUserId = (payload as any).user.id;
+      } else {
+        throw new Error('JWT payload does not contain user id');
+      }
+      // console.log('Decoded JWT payload:', payload);
+    } catch (jwtError: any) {
+      console.error('JWT verification failed:', jwtError);
+      return res.status(401).json({ success: false, message: 'Invalid session token', error: jwtError.message });
+    }
 
-    const { currentPassword, newPassword } = req.body;
+    const { newPassword, userId } = req.body;
 
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Current password and new password are required' });
+    if (!newPassword) {
+      return res.status(400).json({ success: false, message: 'New password is required' });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
     }
 
+    // Determine which user to update
+    const targetUserId = userId || sessionUserId;
+
     // Get user from database
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: targetUserId }
     });
+    // console.log('User lookup result:', user);
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    // Verify current password
-    let isCurrentPasswordValid = false;
-    if (user.password.startsWith('$2b$')) {
-      isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
-    } else {
-      isCurrentPasswordValid = currentPassword === user.password;
-    }
-
-    if (!isCurrentPasswordValid) {
-      return res.status(401).json({ success: false, message: 'Current password is incorrect' });
     }
 
     // Hash new password
@@ -60,14 +64,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Update password in database
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: targetUserId },
       data: { password: hashedNewPassword }
     });
 
-    return res.status(200).json({ success: true, message: 'Password changed successfully' });
+    return res.status(200).json({ success: true, message: 'Password changed successfully', username: user.username });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Change password error:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error', error: error?.message, stack: error?.stack });
   }
 } 

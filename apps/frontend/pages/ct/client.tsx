@@ -190,7 +190,7 @@ export default function CashClientPage() {
                         <option value="">Select Client...</option>
                         {clients.map(client => (
                           <option key={client.id} value={client.id}>
-                            {client.code} - {client.name} (₹{client.creditLimit.toLocaleString()})
+                            {client.code} - {client.name} ({client.creditLimit.toLocaleString()})
                           </option>
                         ))}
                       </select>

@@ -44,6 +44,9 @@ const UserCreatePage = () => {
   // Get role display name
   const getRoleDisplayName = (role: string) => {
     switch (role) {
+      case 'ADMIN': return 'Admin';
+      case 'SUPER_ADMIN': return 'Super Admin';
+      case 'SUB_OWNER': return 'Sub Owner';
       case 'SUB': return 'Sub Agent';
       case 'MASTER': return 'Master Agent';
       case 'SUPER_AGENT': return 'Super Agent';
@@ -64,6 +67,9 @@ const UserCreatePage = () => {
       default: return '/user_details/sub';
     }
   };
+
+  // Add role selector state
+  const [selectedRole, setSelectedRole] = useState<string>((role as string) || 'SUB');
 
   // Check session validity on component mount
   useEffect(() => {
@@ -133,9 +139,7 @@ const UserCreatePage = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Use role from URL query parameter, default to 'SUB' if not provided
-    const userRole = (role as string) || 'SUB';
+    const userRole = selectedRole;
     
     // If parentId is provided in URL, use it directly
     if (parentId) {
@@ -238,7 +242,7 @@ const UserCreatePage = () => {
   return (
     <Layout>
       <Head>
-        <title>Create {roleDisplayName}</title>
+        <title>Create {getRoleDisplayName(selectedRole)}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
         <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback" />
         <link rel="stylesheet" href="/adminlite/plugins/fontawesome-free/css/all.min-26386564b5cf1594be24059af1cd0db9.css" />
@@ -257,12 +261,12 @@ const UserCreatePage = () => {
         <div className="container-fluid">
           <div className="row mb-2">
             <div className="col-sm-6">
-              <h1>{roleDisplayName}</h1>
+              <h1>{getRoleDisplayName(selectedRole)}</h1>
             </div>
             <div className="col-sm-6">
               <ol className="breadcrumb float-sm-right">
-                <li className="breadcrumb-item"><a href={getRedirectPath(userRole)}>{roleDisplayName}</a></li>
-                <li className="breadcrumb-item active">New {roleDisplayName}</li>
+                <li className="breadcrumb-item"><a href={getRedirectPath(userRole)}>{getRoleDisplayName(userRole)}</a></li>
+                <li className="breadcrumb-item active">New {getRoleDisplayName(userRole)}</li>
               </ol>
             </div>
           </div>
@@ -283,6 +287,26 @@ const UserCreatePage = () => {
                   </div>
                 </div>
                 <div className="card-body">
+                  {/* Role Selector Dropdown */}
+                  <div className="form-group">
+                    <label htmlFor="role">Role</label>
+                    <select
+                      id="role"
+                      className="form-control"
+                      value={selectedRole}
+                      onChange={e => setSelectedRole(e.target.value)}
+                      required
+                    >
+                      <option value="ADMIN">Admin</option>
+                      <option value="SUPER_ADMIN">Super Admin</option>
+                      <option value="SUB_OWNER">Sub Owner</option>
+                      <option value="SUB">Sub Agent</option>
+                      <option value="MASTER">Master Agent</option>
+                      <option value="SUPER_AGENT">Super Agent</option>
+                      <option value="AGENT">Agent</option>
+                      <option value="USER">Client</option>
+                    </select>
+                  </div>
                   <div className="form-group">
                     <label htmlFor="code">Code</label>
                     <input 
@@ -380,7 +404,7 @@ const UserCreatePage = () => {
                 <div className="card-body">
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="share">{roleDisplayName} Share</label>
+                      <label htmlFor="share">{getRoleDisplayName(userRole)} Share</label>
                       <input 
                         type="number" 
                         max="94.0" 
@@ -410,7 +434,7 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="cshare">{roleDisplayName} Casino Share</label>
+                      <label htmlFor="cshare">{getRoleDisplayName(userRole)} Casino Share</label>
                       <input 
                         type="number" 
                         max="94.0" 
@@ -440,7 +464,7 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="icshare">{roleDisplayName} Int. Casino Share</label>
+                      <label htmlFor="icshare">{getRoleDisplayName(userRole)} Int. Casino Share</label>
                       <input 
                         type="number" 
                         max="0.0" 
@@ -470,7 +494,7 @@ const UserCreatePage = () => {
 
                   <div className="form-group row">
                     <div className="form-group col-md-6">
-                      <label htmlFor="mobileshare">{roleDisplayName} Mobile Share</label>
+                      <label htmlFor="mobileshare">{getRoleDisplayName(userRole)} Mobile Share</label>
                       <input 
                         type="number" 
                         min="0" 
@@ -625,7 +649,7 @@ const UserCreatePage = () => {
                   </>
                 ) : (
                   <>
-                    <i className="fas fa-save"></i> Create New {roleDisplayName}
+                    <i className="fas fa-save"></i> Create New {getRoleDisplayName(userRole)}
                   </>
                 )}
               </button>

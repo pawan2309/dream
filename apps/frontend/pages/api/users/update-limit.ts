@@ -9,8 +9,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
 
-  const { userId, amount, type } = req.body;
-  console.log('Extracted data:', { userId, amount, type });
+  const { userId, amount, type, role } = req.body;
+  console.log('Extracted data:', { userId, amount, type, role });
 
   if (!userId || !amount || !type) {
     console.log('Missing required fields');
@@ -27,6 +27,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ success: false, message: 'Invalid amount' });
   }
 
+  // 1. SUB_OWNER limit can only be changed via DB manipulation, not via this API
+  if (role === 'SUB_OWNER') {
+    return res.status(403).json({ success: false, message: 'Sub Owner limit can only be changed via database manipulation.' });
+  }
+
   try {
     console.log('Finding user with ID:', userId);
     // Get the user to update
@@ -37,6 +42,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('User found:', user ? 'Yes' : 'No');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // For all users except SUB_OWNER, enforce parent limit check on Add
+    if (type === 'Add' && user.parentId) {
+      const parent = await prisma.user.findUnique({ where: { id: user.parentId } });
+      if (!parent) {
+        return res.status(400).json({ success: false, message: 'Parent user not found' });
+      }
+      if (parent.creditLimit < Number(amount)) {
+        return res.status(400).json({ success: false, message: 'Parent does not have enough available limit.' });
+      }
+      // Deduct from parent
+      await prisma.user.update({
+        where: { id: parent.id },
+        data: { creditLimit: parent.creditLimit - Number(amount) }
+      });
+    }
+    // For Minus, add back to parent if parent exists
+    if (type === 'Minus' && user.parentId) {
+      const parent = await prisma.user.findUnique({ where: { id: user.parentId } });
+      if (parent) {
+        await prisma.user.update({
+          where: { id: parent.id },
+          data: { creditLimit: parent.creditLimit + Number(amount) }
+        });
+      }
     }
 
     // Calculate new credit limit (using type assertion for now)
@@ -59,6 +90,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     console.log('User updated successfully');
 
+    // Fetch parent/upper tier user info if available
+    let parentName = 'System';
+    if (user.parentId) {
+      const parentUser = await prisma.user.findUnique({ where: { id: user.parentId } });
+      if (parentUser) {
+        parentName = `${parentUser.code || ''} ${parentUser.name || ''}`.trim();
+      }
+    }
+    let remark = '';
+    if (type === 'Add') {
+      remark = `Coins deposit from ${currentLimit} to ${newLimit} updated From ${parentName}`;
+    } else {
+      remark = `Coins withdraw from ${currentLimit} to ${newLimit} updated From ${parentName}`;
+    }
     // Create ledger entry for this transaction
     await prisma.ledger.create({
       data: {
@@ -68,7 +113,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         credit: type === 'Add' ? Number(amount) : 0,
         balanceAfter: newLimit,
         type: 'ADJUSTMENT',
-        remark: `${type} ${amount} to credit limit`
+        remark,
       }
     });
 

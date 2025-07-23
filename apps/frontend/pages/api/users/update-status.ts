@@ -21,7 +21,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    if (!decoded || !decoded.id) {
+    const userId = decoded.user?.id;
+    if (!decoded || !userId) {
       return res.status(401).json({ success: false, message: 'Invalid session' });
     }
 

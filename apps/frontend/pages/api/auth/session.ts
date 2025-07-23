@@ -4,7 +4,7 @@ import { parse, serialize } from 'cookie';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const SESSION_COOKIE = 'betx_session';
-const SESSION_DURATION = 60 * 60; // 1 hour
+const SESSION_DURATION = 60 * 60 * 24 * 30; // 30 days
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   console.log('Session API called');
@@ -35,7 +35,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     const { exp, iat, ...rest } = payload as any;
 
     // Re-sign for sliding session
-    const newToken = jwt.sign(rest, JWT_SECRET, { expiresIn: SESSION_DURATION });
+    const newToken = jwt.sign({ user: rest.user }, JWT_SECRET, { expiresIn: SESSION_DURATION });
 
     res.setHeader('Set-Cookie', serialize(SESSION_COOKIE, newToken, {
       httpOnly: true,
@@ -46,7 +46,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     }));
 
     console.log('Session valid, returning valid: true');
-    return res.status(200).json({ valid: true, user: payload });
+    return res.status(200).json({ valid: true, user: rest.user });
   } catch (e) {
     console.error('Session validation error:', e);
     return res.status(200).json({ valid: false });

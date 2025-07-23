@@ -2,11 +2,15 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/user_details/master": "pages/user_details/master.js",
-  "/user_details/sub": "pages/user_details/sub.js",
-  "/api/auth/session": "pages/api/auth/session.js",
   "/api/users": "pages/api/users.js",
-  "/ct/sub": "pages/ct/sub.js",
-  "/ct/master": "pages/ct/master.js",
-  "/api/users/[id]/ledger": "pages/api/users/[id]/ledger.js"
+  "/api/auth/session": "pages/api/auth/session.js",
+  "/user_details/client": "pages/user_details/client.js",
+  "/user_details/master": "pages/user_details/master.js",
+  "/user_details/super_admin": "pages/user_details/super_admin.js",
+  "/user_details/admin": "pages/user_details/admin.js",
+  "/user_details/super": "pages/user_details/super.js",
+  "/user_details/agent": "pages/user_details/agent.js",
+  "/user_details/sub": "pages/user_details/sub.js",
+  "/reports/login-reports": "pages/reports/login-reports.js",
+  "/api/reports/login-reports": "pages/api/reports/login-reports.js"
 }

@@ -7,12 +7,13 @@ const sidebarLinks = [
   {
     section: 'USER DETAILS',
     links: [
-      { label: 'Sub Agent Master', href: '/user_details/sub', icon: 'fas fa-user-secret' },
+      { label: 'Super Admin Master', href: '/user_details/super_admin', icon: 'fas fa-user-tie' },
+      { label: 'Admin Master', href: '/user_details/admin', icon: 'fas fa-user-shield' },
+      { label: 'Sub Agent Master', href: '/user_details/sub', icon: 'fas fa-chess-rook' },
       { label: 'MasterAgent Master', href: '/user_details/master', icon: 'fas fa-crown' },
       { label: 'SuperAgent Master', href: '/user_details/super', icon: 'fas fa-user-tie' },
       { label: 'Agent Master', href: '/user_details/agent', icon: 'fas fa-user-shield' },
       { label: 'Client Master', href: '/user_details/client', icon: 'fas fa-user' },
-      { label: 'Collection Master', href: '/user_details/collection', icon: 'fas fa-coins' },
     ],
   },
   {
@@ -138,16 +139,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // -------- Handle Navigation State --------
   useEffect(() => {
     // Prevent default browser behavior for navigation
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Only prevent if it's a navigation within the app
-      if (router.asPath !== window.location.pathname) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    // (Removed beforeunload handler to prevent unwanted confirmation dialog)
   }, [router.asPath]);
 
   // -------- Preserve Scroll Position on Navigation --------

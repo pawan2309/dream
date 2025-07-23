@@ -447,9 +447,9 @@ export default function ClientPage() {
                                 <td>{user.name || 'N/A'}</td>
                                 <td>{user.contactno || 'N/A'}</td>
                                 <td>******</td>
-                                <td>₹{(user.creditLimit || 0).toLocaleString()}</td>
-                                <td>₹{(user.balance * 0.5)?.toLocaleString() || '0'}</td>
-                                <td>₹{(user.balance * 0.2)?.toLocaleString() || '0'}</td>
+                                <td>{(user.creditLimit || 0).toLocaleString()}</td>
+                                <td>{(user.balance * 0.5)?.toLocaleString() || '0'}</td>
+                                <td>{(user.balance * 0.2)?.toLocaleString() || '0'}</td>
                                 <td>{user.share || 0}%</td>
                                 <td>
                                   <span className={`badge ${user.isActive ? 'badge-success' : 'badge-danger'}`}>

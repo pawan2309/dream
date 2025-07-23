@@ -6,7 +6,7 @@ import bcrypt from 'bcrypt';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
 const SESSION_COOKIE = 'betx_session';
-const SESSION_DURATION = 60 * 60; // 1 hour
+const SESSION_DURATION = 60 * 60 * 24 * 30; // 30 days
 
 // Helper function to detect device type
 function getDeviceType(userAgent: string): string {
@@ -76,11 +76,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.log('Password correct, creating JWT token...');
     const token = jwt.sign(
       {
-        id: user.id,
-        username: user.username,
-        name: user.name,
-        role: user.role,
-        isActive: user.isActive,
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role,
+          isActive: user.isActive,
+        }
       },
       JWT_SECRET,
       { expiresIn: SESSION_DURATION }

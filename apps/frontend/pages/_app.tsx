@@ -1,8 +1,40 @@
 import type { AppProps } from 'next/app'
 import '../styles/globals.css'
 import { useEffect } from 'react'
+import { useRouter } from 'next/router';
 
 export default function App({ Component, pageProps }: AppProps) {
+  const router = useRouter();
+  useEffect(() => {
+    let timeout: any;
+    const refreshSession = async () => {
+      clearTimeout(timeout);
+      // Only try to refresh if the session cookie exists
+      if (document.cookie.includes('betx_session')) {
+        try {
+          const res = await fetch('/api/auth/refresh', { method: 'POST' });
+          if (!res.ok) {
+            router.replace('/login');
+          }
+        } catch {
+          router.replace('/login');
+        }
+        timeout = setTimeout(() => {
+          router.replace('/login');
+        }, 4.5 * 60 * 1000); // 4.5 minutes
+      }
+    };
+    window.addEventListener('mousemove', refreshSession);
+    window.addEventListener('keydown', refreshSession);
+    // Initial call to set timer
+    refreshSession();
+    return () => {
+      window.removeEventListener('mousemove', refreshSession);
+      window.removeEventListener('keydown', refreshSession);
+      clearTimeout(timeout);
+    };
+  }, [router]);
+
   useEffect(() => {
     // Add AdminLTE scripts in correct order
     const loadScript = (src: string) => {
