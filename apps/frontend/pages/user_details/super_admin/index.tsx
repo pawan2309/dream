@@ -307,19 +307,21 @@ export default function SuperAdminMasterPage() {
                 <form action="#" method="post" id="demoForm">
                   <div className="card-header">
                     <div className="form-group">
-                      <Link href="/user_details/super_admin/create" className="btn btn-primary mr-2">
-                        New <i className="fa fa-plus-circle"></i>
-                      </Link>
-                      <Link href="/user_details/super_admin/limit" className="btn btn-info mr-2">
-                        Limit Update <i className="fa fa-coins"></i>
-                      </Link>
+                      <div className="user-action-grid">
+                        <Link href="/user_details/super_admin/create" className="btn btn-primary">
+                          New <i className="fa fa-plus-circle"></i>
+                        </Link>
+                        <Link href="/user_details/super_admin/limit" className="btn btn-info">
+                          Limit Update <i className="fa fa-coins"></i>
+                        </Link>
+                        <button className="btn btn-success" type="button" onClick={() => handleStatusUpdate(true)} disabled={activating || deactivating || selectedUsers.length === 0}>
+                          {activating ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-check"></i> Active</>}
+                        </button>
+                        <button className="btn btn-danger" type="button" onClick={() => handleStatusUpdate(false)} disabled={activating || deactivating || selectedUsers.length === 0}>
+                          {deactivating ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fa fa-ban"></i> DeActivate</>}
+                        </button>
+                      </div>
                       {/* Removed the badge showing selectedUsers.length */}
-                      <button className="btn btn-success mr-2" type="button" onClick={() => handleStatusUpdate(true)} disabled={activating || deactivating || selectedUsers.length === 0}>
-                        {activating ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fas fa-check"></i> Active</>}
-                      </button>
-                      <button className="btn btn-danger mr-2" type="button" onClick={() => handleStatusUpdate(false)} disabled={activating || deactivating || selectedUsers.length === 0}>
-                        {deactivating ? <i className="fas fa-spinner fa-spin"></i> : <><i className="fa fa-ban"></i> DeActivate</>}
-                      </button>
                     </div>
                   </div>
                   <div className="card-body">

@@ -264,3 +264,44 @@ body {
   margin-top: 0 !important;
   padding-top: 0 !important;
 }
+
+/* Make all tables horizontally scrollable on overflow */
+table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* Or, for more control, use a wrapper class: */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.user-action-grid .btn {
+  font-size: 1.1rem;
+}
+
+@media (max-width: 767px) {
+  .user-action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: 12px;
+    max-width: 320px;
+    margin-bottom: 16px;
+  }
+  .user-action-grid .btn {
+    width: 100%;
+    min-height: 60px;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+  }
+  .user-action-grid .btn-primary i,
+  .user-action-grid .btn-success i,
+  .user-action-grid .btn-danger i {
+    margin-left: 5px;
+  }
+}

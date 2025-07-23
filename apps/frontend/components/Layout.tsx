@@ -392,7 +392,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Detect mobile screen size
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 992); // Bootstrap lg breakpoint
+    const handleResize = () => setIsMobile(window.innerWidth < 768); // 768px breakpoint for mobile
     window.addEventListener('resize', handleResize);
     handleResize();
     return () => window.removeEventListener('resize', handleResize);
@@ -414,12 +414,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           style={{ 
             position: 'fixed', 
             top: 0,
-            left: 0,
-            right: 0,
+            left: isMobile ? 0 : (sidebarCollapsed ? 0 : 250),
+            width: isMobile ? '100vw' : (sidebarCollapsed ? '100vw' : 'calc(100vw - 250px)'),
             zIndex: 1030,
             minHeight: '64px',
             height: '64px',
-            transition: 'none',
+            transition: 'left 0.5s cubic-bezier(.4,0,.2,1), width 0.3s cubic-bezier(.4,0,.2,1)',
             backgroundColor: '#673ab7',
             color: '#fff',
             boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
@@ -430,28 +430,48 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
+            paddingLeft: 0,
+            paddingRight: 24,
           }}
         >
           {/* Left navbar links */}
           <ul className="navbar-nav">
             <li className="nav-item">
-              <a className="nav-link" href="#" role="button" onClick={(e) => {
-                e.preventDefault();
-                if (isMobile) {
-                  setMobileSidebarOpen(true);
-                } else {
-                  toggleSidebar();
-                }
-              }} style={{ 
-                position: 'relative', 
-                zIndex: 1000,
-                minWidth: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <i className="fas fa-bars"></i>
-              </a>
+              <div
+                style={{
+                  position: 'fixed', // changed from absolute to fixed for flush alignment
+                  top: 0,
+                  left: isMobile ? 0 : (sidebarCollapsed ? 0 : 255), // 250px sidebar - 5px
+                  height: '64px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  transition: 'left 0.3s cubic-bezier(.4,0,.2,1)',
+                  zIndex: 1100,
+                }}
+              >
+                <a className="nav-link" href="#" role="button" onClick={(e) => {
+                  e.preventDefault();
+                  if (isMobile) {
+                    setMobileSidebarOpen(true);
+                  } else {
+                    toggleSidebar();
+                  }
+                }} style={{ 
+                  minWidth: '40px',
+                  height: '64px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 0,
+                  margin: 0,
+                  boxSizing: 'border-box',
+                  cursor: 'pointer',
+                  border: 'none',
+                  background: 'none',
+                }}>
+                  <i className="fas fa-bars" style={{ fontSize: 24, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}></i>
+                </a>
+              </div>
             </li>
           </ul>
 
@@ -561,77 +581,180 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </nav>
 
         {/* ===================== Sidebar ===================== */}
-        <aside
-          className="main-sidebar sidebar-light-indigo elevation-4"
-          style={{
-            position: isMobile ? 'fixed' : 'fixed',
-            top: 0,
-            left: isMobile ? (mobileSidebarOpen ? 0 : '-80vw') : 0,
-            height: '100vh',
-            zIndex: 1031,
-            display: 'flex',
-            flexDirection: 'column',
-            width: isMobile ? '80vw' : '250px',
-            maxWidth: '100vw',
-            minWidth: isMobile ? '0' : '250px',
-            background: '#fff',
-            boxShadow: isMobile && mobileSidebarOpen ? '2px 0 8px rgba(0,0,0,0.15)' : undefined,
-            transition: 'left 0.3s cubic-bezier(.4,0,.2,1)',
-          }}
-        >
-          {/* Brand Logo */}
-          <Link href="/" className="brand-link bg-indigo text-white" style={{
-            display: 'flex',
-            alignItems: 'center',
-            padding: '0 15px',
-            height: '60px',
-            borderBottom: '1px solid rgba(255,255,255,0.1)',
-            flexShrink: 0
-          }}>
-            <img 
-              src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" 
-              alt="AdminLTE Logo"
-              className="brand-image img-circle elevation-3" 
-              style={{ opacity: '.8', marginRight: '10px' }}
-            />
-            <span className="brand-text font-weight-light" id="brandName">BETX</span>
-          </Link>
-          {/* Sidebar Navigation Menu */}
-          <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto' }}>
-            <nav>
-              <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                {sidebarLinks.map(section => {
-                  const isExpanded = expandedSections.has(section.section);
-                  return (
-                    <React.Fragment key={section.section}>
-                      <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section.section)}>
-                        {section.section}
-                        <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} float-right`} style={{ fontSize: '12px', marginTop: '3px' }}></i>
-                      </li>
-                      {isExpanded && section.links.map(link => (
-                        <li className="nav-item" key={link.label}>
-                          <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}
-                            onClick={() => { if (isMobile) setMobileSidebarOpen(false); }}
-                          >
-                            <i className={`nav-icon ${link.icon}`} style={{ fontSize: '12px', marginRight: '8px' }}></i>
-                            <p style={{ margin: '0', fontSize: '13px' }}>{link.label}</p>
-                          </Link>
+        {isMobile ? (
+          mobileSidebarOpen && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              zIndex: 1031,
+              margin: 0,
+              padding: 0,
+              pointerEvents: 'auto',
+            }}>
+              {/* Sidebar */}
+              <aside
+                className="main-sidebar sidebar-light-indigo elevation-4"
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  margin: 0,
+                  padding: 0,
+                  height: '100vh',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  width: '80vw',
+                  maxWidth: '100vw',
+                  minWidth: 0,
+                  background: '#fff',
+                  boxShadow: '2px 0 8px rgba(0,0,0,0.15)',
+                  transition: 'left 0.4s cubic-bezier(.4,0,.2,1)',
+                  boxSizing: 'border-box',
+                }}
+              >
+                {/* Brand Logo */}
+                <Link href="/" className="brand-link bg-indigo text-white" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  padding: '0 15px',
+                  height: '60px',
+                  borderBottom: '1px solid rgba(255,255,255,0.1)',
+                  flexShrink: 0
+                }}>
+                  <img 
+                    src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" 
+                    alt="AdminLTE Logo"
+                    className="brand-image img-circle elevation-3" 
+                    style={{ opacity: '.8', marginRight: '10px' }}
+                  />
+                  <span className="brand-text font-weight-light" id="brandName">BETX</span>
+                </Link>
+                {/* Sidebar Navigation Menu */}
+                <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto', marginLeft: 0, paddingLeft: 0 }}>
+                  <nav>
+                    <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                      {sidebarLinks.map(section => {
+                        const isExpanded = expandedSections.has(section.section);
+                        return (
+                          <React.Fragment key={section.section}>
+                            <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section.section)}>
+                              {section.section}
+                              <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} float-right`} style={{ fontSize: '12px', marginTop: '3px' }}></i>
+                            </li>
+                            {isExpanded && section.links.map(link => (
+                              <li className="nav-item" key={link.label}>
+                                <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}
+                                  onClick={() => setMobileSidebarOpen(false)}
+                                >
+                                  <i className={`nav-icon ${link.icon}`} style={{ fontSize: '12px', marginRight: '8px' }}></i>
+                                  <p style={{ margin: '0', fontSize: '13px' }}>{link.label}</p>
+                                </Link>
+                              </li>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })}
+                    </ul>
+                  </nav>
+                </div>
+              </aside>
+              {/* Overlay */}
+              <div
+                onClick={() => setMobileSidebarOpen(false)}
+                style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  width: '100vw',
+                  height: '100vh',
+                  background: 'rgba(0,0,0,0.5)',
+                  zIndex: 1030,
+                  margin: 0,
+                  padding: 0,
+                }}
+              />
+            </div>
+          )
+        ) : (
+          // Desktop/Tablet Sidebar
+          <aside
+            className="main-sidebar sidebar-light-indigo elevation-4"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: sidebarCollapsed ? '-250px' : 0,
+              height: '100vh',
+              zIndex: 1031,
+              display: 'flex',
+              flexDirection: 'column',
+              width: '250px',
+              maxWidth: '100vw',
+              minWidth: '250px',
+              background: '#fff',
+              boxShadow: undefined,
+              transition: 'left 0.4s cubic-bezier(.4,0,.2,1)',
+              boxSizing: 'border-box',
+              marginLeft: 0,
+              paddingLeft: 0,
+            }}
+          >
+            {/* Brand Logo */}
+            <Link href="/" className="brand-link bg-indigo text-white" style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 15px',
+              height: '60px',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+              flexShrink: 0
+            }}>
+              <img 
+                src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png" 
+                alt="AdminLTE Logo"
+                className="brand-image img-circle elevation-3" 
+                style={{ opacity: '.8', marginRight: '10px' }}
+              />
+              <span className="brand-text font-weight-light" id="brandName">BETX</span>
+            </Link>
+            {/* Sidebar Navigation Menu */}
+            <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto', marginLeft: 0, paddingLeft: 0 }}>
+              <nav>
+                <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                  {sidebarLinks.map(section => {
+                    const isExpanded = expandedSections.has(section.section);
+                    return (
+                      <React.Fragment key={section.section}>
+                        <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section.section)}>
+                          {section.section}
+                          <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} float-right`} style={{ fontSize: '12px', marginTop: '3px' }}></i>
                         </li>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-              </ul>
-            </nav>
-          </div>
-        </aside>
+                        {isExpanded && section.links.map(link => (
+                          <li className="nav-item" key={link.label}>
+                            <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}>
+                              <i className={`nav-icon ${link.icon}`} style={{ fontSize: '12px', marginRight: '8px' }}></i>
+                              <p style={{ margin: '0', fontSize: '13px' }}>{link.label}</p>
+                            </Link>
+                          </li>
+                        ))}
+                      </React.Fragment>
+                    );
+                  })}
+                </ul>
+              </nav>
+            </div>
+          </aside>
+        )}
 
         {/* ===================== Main Content Wrapper ===================== */}
         <div className="content-wrapper" style={{
           marginTop: '60px',
-          marginLeft: sidebarCollapsed ? '0' : '250px',
+          width: isMobile ? '100vw' : (sidebarCollapsed ? '100vw' : 'calc(100vw - 250px)'),
+          marginLeft: isMobile ? '0' : (sidebarCollapsed ? '0' : '250px'),
           minHeight: 'calc(100vh - 60px)',
-          transition: 'margin-left 0.3s ease-in-out'
+          transition: 'margin-left 0.3s ease-in-out, width 0.3s ease-in-out',
+          paddingRight: 24,
         }}>
           {/* This is where the page content is rendered */}
           {children}
@@ -650,22 +773,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <aside className="control-sidebar control-sidebar-dark">
           {/* Control sidebar content goes here */}
         </aside>
-
-        {/* Render overlay for mobile sidebar */}
-        {isMobile && mobileSidebarOpen && (
-          <div
-            onClick={() => setMobileSidebarOpen(false)}
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              background: 'rgba(0,0,0,0.3)',
-              zIndex: 1030,
-            }}
-          />
-        )}
       </div>
     </div>
   );
