@@ -2,6 +2,11 @@ import type { AppProps } from 'next/app'
 import '../styles/globals.css'
 import { useEffect } from 'react'
 import { useRouter } from 'next/router';
+import dayjs from 'dayjs';
+import weekday from 'dayjs/plugin/weekday';
+dayjs.extend(weekday);
+// import { ConfigProvider, theme as antdTheme } from 'antd';
+// import 'antd/dist/antd.css';
 
 export default function App({ Component, pageProps }: AppProps) {
   const router = useRouter();
@@ -100,5 +105,9 @@ export default function App({ Component, pageProps }: AppProps) {
     initializeAdminLTE();
   }, []);
 
-  return <Component {...pageProps} />
+  return (
+    // <ConfigProvider theme={{ algorithm: antdTheme.darkAlgorithm }}>
+      <Component {...pageProps} />
+    // </ConfigProvider>
+  );
 } 

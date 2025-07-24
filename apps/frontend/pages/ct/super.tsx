@@ -48,6 +48,16 @@ export default function CashSuperPage() {
     }
   }, [form.super]);
 
+  // Filter function for profit/loss per match
+  const isProfitLossEntry = (entry: any) => {
+    const allowedTypes = ['WIN', 'LOSS', 'PNL_CREDIT', 'PNL_DEBIT'];
+    const allowedTransactionTypes = ['BET', 'BET_SETTLEMENT', 'P&L'];
+    return (
+      (allowedTypes.includes(entry.type)) ||
+      (entry.transactionType && allowedTransactionTypes.includes(entry.transactionType))
+    );
+  };
+
   const fetchSupers = async () => {
     try {
       const response = await fetch('/api/users?role=SUPER_AGENT');
@@ -72,7 +82,8 @@ export default function CashSuperPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.ledger) {
-          setTransactions(data.ledger);
+          // Filter for profit/loss entries only
+          setTransactions(data.ledger.filter(isProfitLossEntry));
         } else {
           setTransactions([]);
         }

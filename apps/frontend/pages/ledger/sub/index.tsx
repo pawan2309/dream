@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../../../components/Layout';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import dayjs, { Dayjs } from 'dayjs';
 
 interface Sub {
   id: string;
@@ -22,6 +23,7 @@ interface LedgerEntry {
   type: string;
   remark?: string;
   createdAt: string;
+  transactionType?: string;
 }
 
 interface SubWithLedger extends Sub {
@@ -45,6 +47,7 @@ export default function AllSubLedgerPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSub, setSelectedSub] = useState('');
   const router = useRouter();
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().startOf('month'), dayjs().endOf('day')]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -110,43 +113,57 @@ export default function AllSubLedgerPage() {
     sub.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Date range filter UI
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>, idx: 0 | 1) => {
+    const val = e.target.value;
+    setDateRange(prev => {
+      const newRange: [Dayjs, Dayjs] = [prev[0], prev[1]];
+      newRange[idx] = dayjs(val);
+      return newRange;
+    });
+  };
+
   // Calculate Lena He (payments to receive) and Dena He (payments to pay) for all subs
   const calculateLenaDenaSummary = () => {
     const lenaHe: LenaDenaSummary[] = [];
     const denaHe: LenaDenaSummary[] = [];
-
+    const [startDate, endDate] = dateRange;
     filteredSubs.forEach(sub => {
-      const totalCredit = sub.ledger.reduce((sum, entry) => sum + (entry.credit || 0), 0);
-      const totalDebit = sub.ledger.reduce((sum, entry) => sum + (entry.debit || 0), 0);
-      
-      // Opening balance should be the initial credit limit (23,00,000.00)
-      // We need to find the initial credit limit from the first credit transaction
-      const sortedLedger = [...sub.ledger].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      const initialCreditEntry = sortedLedger.find(entry => entry.credit > 0);
-      const openingBalance = initialCreditEntry ? initialCreditEntry.credit : sub.creditLimit;
-      
-      // Standard accounting formula: Closing Balance = Opening Balance + Total Deposits - Total Withdrawals
-      // In our context: Closing Balance = Opening Balance + Total Credit - Total Debit
-      const closingBalance = openingBalance + totalCredit - totalDebit;
-      const netAmount = totalCredit - totalDebit;
-
+      // Only use profit/loss ledger entries
+      const profitLossLedger = sub.ledger.filter(entry => {
+        const allowedTypes = ['WIN', 'LOSS', 'PNL_CREDIT', 'PNL_DEBIT'];
+        const allowedTransactionTypes = ['BET', 'BET_SETTLEMENT', 'P&L'];
+        return (
+          allowedTypes.includes(entry.type) ||
+          (entry.transactionType && allowedTransactionTypes.includes(entry.transactionType))
+        );
+      });
+      // Opening balance: sum of all (credit - debit) before startDate
+      const openingBalance = profitLossLedger
+        .filter(entry => dayjs(entry.createdAt).isBefore(startDate, 'day'))
+        .reduce((sum, entry) => sum + (entry.credit || 0) - (entry.debit || 0), 0);
+      // Closing balance: sum of all (credit - debit) up to endDate (inclusive)
+      const closingBalance = profitLossLedger
+        .filter(entry => {
+          const entryDate = dayjs(entry.createdAt);
+          return entryDate.isBefore(endDate, 'day') || entryDate.isSame(endDate, 'day');
+        })
+        .reduce((sum, entry) => sum + (entry.credit || 0) - (entry.debit || 0), 0);
+      // Current balance: net change in range
+      const currentBalance = closingBalance - openingBalance;
       const summary: LenaDenaSummary = {
         name: `${sub.code} ${sub.name}`,
         contact: sub.contactno || 'N/A',
         openBalance: openingBalance,
-        currentBalance: Math.abs(netAmount),
+        currentBalance: Math.abs(currentBalance),
         closingBalance: closingBalance
       };
-
-      if (netAmount > 0) {
-        // This sub owes us money (Lena He - to receive)
+      if (currentBalance > 0) {
         lenaHe.push(summary);
-      } else if (netAmount < 0) {
-        // We owe this sub money (Dena He - to pay)
+      } else if (currentBalance < 0) {
         denaHe.push(summary);
       }
     });
-
     return { lenaHe, denaHe };
   };
 
@@ -202,6 +219,14 @@ export default function AllSubLedgerPage() {
                 <li className="breadcrumb-item"><a href="/">Home</a></li>
                 <li className="breadcrumb-item active">All Sub Ledger</li>
               </ol>
+            </div>
+          </div>
+          {/* Date Range Picker UI */}
+          <div className="row mb-3">
+            <div className="col-12">
+              <label style={{ fontWeight: 600, marginRight: 8 }}>Select Date Range:</label>
+              <input type="date" value={dateRange[0].format('YYYY-MM-DD')} onChange={e => handleDateChange(e, 0)} style={{ marginRight: 8 }} />
+              <input type="date" value={dateRange[1].format('YYYY-MM-DD')} onChange={e => handleDateChange(e, 1)} />
             </div>
           </div>
         </div>

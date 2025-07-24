@@ -1,8 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Layout from '../../components/Layout';
 import Head from 'next/head';
 import Link from 'next/link';
 import NewUserButton from '../../components/NewUserButton';
+
+function PortalDropdown({ show, anchorRef, children }) {
+  const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 });
+  React.useEffect(() => {
+    if (show && anchorRef.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [show, anchorRef]);
+  if (!show) return null;
+  return createPortal(
+    <div
+      className="dropdown-menu show"
+      style={{
+        position: 'absolute',
+        zIndex: 3000,
+        top: coords.top,
+        left: coords.left,
+        minWidth: coords.width,
+      }}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+}
 
 export default function ClientPage() {
   const [siteName, setSiteName] = useState('');
@@ -17,6 +48,7 @@ export default function ClientPage() {
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -353,7 +385,7 @@ export default function ClientPage() {
                             </label>
                           </div>
                         </div>
-                        <table className="table table-bordered table-striped">
+                        <table className="table table-bordered table-striped" style={{ width: '100%', tableLayout: 'fixed' }}>
                           <thead>
                             <tr>
                               <th>
@@ -393,54 +425,26 @@ export default function ClientPage() {
                                     onChange={(e) => handleUserSelect(user.id, e.target.checked)}
                                   />
                                 </td>
-                                <td>
+                                <td style={{ position: 'relative' }}>
                                   <div className="dropdown">
                                     <button 
+                                      ref={buttonRef}
                                       className="btn btn-link btn-sm p-0" 
                                       onClick={(e) => toggleDropdown(user.id, e)}
                                     >
                                       {idx + 1} <i className="fas fa-chevron-down"></i>
                                     </button>
-                                    {openDropdown === user.id && (
-                                      <div className="dropdown-menu show" style={{ position: 'absolute', zIndex: 1000 }}>
-                                        <button 
-                                          className="dropdown-item" 
-                                          onClick={(e) => handleDropdownAction('edit', user, e)}
-                                        >
-                                          Edit
-                                        </button>
-                                        <button 
-                                          className="dropdown-item" 
-                                          onClick={(e) => handleDropdownAction(user.isActive ? 'inactive' : 'active', user, e)}
-                                        >
-                                          {user.isActive ? 'Deactivate' : 'Activate'}
-                                        </button>
-                                        <button 
-                                          className="dropdown-item" 
-                                          onClick={(e) => handleDropdownAction('limitUpdate', user, e)}
-                                        >
-                                          Limit Update
-                                        </button>
-                                        <button 
-                                          className="dropdown-item" 
-                                          onClick={(e) => handleDropdownAction('sendSMS', user, e)}
-                                        >
-                                          Send Login Details (SMS)
-                                        </button>
-                                        <button 
-                                          className="dropdown-item" 
-                                          onClick={(e) => handleDropdownAction('sendDevice', user, e)}
-                                        >
-                                          Send Login Details (Device)
-                                        </button>
-                                        <button 
-                                          className="dropdown-item" 
-                                          onClick={(e) => handleDropdownAction('emergency', user, e)}
-                                        >
-                                          Client Emergency
-                                        </button>
-                                      </div>
-                                    )}
+                                    <PortalDropdown show={openDropdown === user.id} anchorRef={buttonRef}>
+                                      <button className="dropdown-item" onClick={(e) => handleDropdownAction('edit', user, e)}>Edit</button>
+                                      <button className="dropdown-item" onClick={(e) => handleDropdownAction(user.isActive ? 'inactive' : 'active', user, e)}>{user.isActive ? 'Deactivate' : 'Activate'}</button>
+                                      <button className="dropdown-item" onClick={() => window.location.href = `/user_details/statement?userId=${user.id}`}>Statement</button>
+                                      <button className="dropdown-item" onClick={() => handleOpenLimitModal(user, 'deposit')} disabled={!user.parentId}>Deposit</button>
+                                      <button className="dropdown-item" onClick={() => handleOpenLimitModal(user, 'withdrawal')} disabled={!user.parentId}>Withdraw</button>
+                                      <button className="dropdown-item" onClick={() => window.location.href = `/user_details/downline?userId=${user.id}`}>Downline</button>
+                                      <button className="dropdown-item" onClick={() => window.location.href = `/changePassword?userId=${user.id}`}>Change Password</button>
+                                      <button className="dropdown-item" onClick={() => alert('Send Login Details (SMS)')}>Send Login Details (SMS)</button>
+                                      <button className="dropdown-item" onClick={() => alert('Send Login Details (Device)')}>Send Login Details (Device)</button>
+                                    </PortalDropdown>
                                   </div>
                                 </td>
                                 <td>{user.code || 'N/A'}</td>

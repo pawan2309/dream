@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../../../components/Layout';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+// import { DatePicker, Space } from 'antd';
+import dayjs, { Dayjs } from 'dayjs';
 
 interface Agent {
   id: string;
@@ -22,6 +24,7 @@ interface LedgerEntry {
   type: string;
   remark?: string;
   createdAt: string;
+  transactionType?: string;
 }
 
 interface AgentWithLedger extends Agent {
@@ -44,6 +47,7 @@ export default function AllAgentLedgerPage() {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
+  const [dateRange, setDateRange] = useState<[Dayjs, Dayjs]>([dayjs().startOf('month'), dayjs().endOf('day')]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -109,43 +113,52 @@ export default function AllAgentLedgerPage() {
     agent.username?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Calculate Lena He (payments to receive) and Dena He (payments to pay) for all agents
+  // Date range filter UI
+  const handleDateChange = (dates: (Dayjs | null)[] | null) => {
+    if (dates && dates[0] && dates[1]) setDateRange([dates[0], dates[1]] as [Dayjs, Dayjs]);
+  };
+
+  // Updated Lena/Dena calculation with date range
   const calculateLenaDenaSummary = () => {
     const lenaHe: LenaDenaSummary[] = [];
     const denaHe: LenaDenaSummary[] = [];
-
+    const [startDate, endDate] = dateRange;
     filteredAgents.forEach(agent => {
-      const totalCredit = agent.ledger.reduce((sum, entry) => sum + (entry.credit || 0), 0);
-      const totalDebit = agent.ledger.reduce((sum, entry) => sum + (entry.debit || 0), 0);
-      
-      // Opening balance should be the initial credit limit
-      // We need to find the initial credit limit from the first credit transaction
-      const sortedLedger = [...agent.ledger].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      const initialCreditEntry = sortedLedger.find(entry => entry.credit > 0);
-      const openingBalance = initialCreditEntry ? initialCreditEntry.credit : agent.creditLimit;
-      
-      // Standard accounting formula: Closing Balance = Opening Balance + Total Deposits - Total Withdrawals
-      // In our context: Closing Balance = Opening Balance + Total Credit - Total Debit
-      const closingBalance = openingBalance + totalCredit - totalDebit;
-      const netAmount = totalCredit - totalDebit;
-
+      // Only use profit/loss ledger entries
+      const profitLossLedger = agent.ledger.filter(entry => {
+        const allowedTypes = ['WIN', 'LOSS', 'PNL_CREDIT', 'PNL_DEBIT'];
+        const allowedTransactionTypes = ['BET', 'BET_SETTLEMENT', 'P&L'];
+        return (
+          allowedTypes.includes(entry.type) ||
+          (entry.transactionType && allowedTransactionTypes.includes(entry.transactionType))
+        );
+      });
+      // Opening balance: sum of all (credit - debit) before startDate
+      const openingBalance = profitLossLedger
+        .filter(entry => dayjs(entry.createdAt).isBefore(startDate, 'day'))
+        .reduce((sum, entry) => sum + (entry.credit || 0) - (entry.debit || 0), 0);
+      // Closing balance: sum of all (credit - debit) up to endDate (inclusive)
+      const closingBalance = profitLossLedger
+        .filter(entry => {
+          const entryDate = dayjs(entry.createdAt);
+          return entryDate.isBefore(endDate, 'day') || entryDate.isSame(endDate, 'day');
+        })
+        .reduce((sum, entry) => sum + (entry.credit || 0) - (entry.debit || 0), 0);
+      // Current balance: net change in range
+      const currentBalance = closingBalance - openingBalance;
       const summary: LenaDenaSummary = {
         name: `${agent.code} ${agent.name}`,
         contact: agent.contactno || 'N/A',
         openBalance: openingBalance,
-        currentBalance: Math.abs(netAmount),
+        currentBalance: Math.abs(currentBalance),
         closingBalance: closingBalance
       };
-
-      if (netAmount > 0) {
-        // This agent owes us money (Lena He - to receive)
+      if (currentBalance > 0) {
         lenaHe.push(summary);
-      } else if (netAmount < 0) {
-        // We owe this agent money (Dena He - to pay)
+      } else if (currentBalance < 0) {
         denaHe.push(summary);
       }
     });
-
     return { lenaHe, denaHe };
   };
 
@@ -201,6 +214,25 @@ export default function AllAgentLedgerPage() {
                 <li className="breadcrumb-item"><a href="/">Home</a></li>
                 <li className="breadcrumb-item active">All Agent Ledger</li>
               </ol>
+            </div>
+          </div>
+          {/* Date Range Picker UI */}
+          <div className="row mb-3">
+            <div className="col-12">
+              {/* <Space direction="horizontal" size={12}> */}
+                {/* <span style={{ fontWeight: 600 }}>Select Date Range:</span> */}
+                {/* <DatePicker.RangePicker
+                  value={dateRange}
+                  onChange={handleDateChange}
+                  allowClear={false}
+                  format="YYYY-MM-DD"
+                  style={{ minWidth: 260 }}
+                  ranges={{
+                    Today: [dayjs().startOf('day'), dayjs().endOf('day')],
+                    'This Month': [dayjs().startOf('month'), dayjs().endOf('day')],
+                  }}
+                /> */}
+              {/* </Space> */}
             </div>
           </div>
         </div>

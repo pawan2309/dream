@@ -14,6 +14,7 @@ const sidebarLinks = [
       { label: 'SuperAgent Master', href: '/user_details/super', icon: 'fas fa-user-tie' },
       { label: 'Agent Master', href: '/user_details/agent', icon: 'fas fa-user-shield' },
       { label: 'Client Master', href: '/user_details/client', icon: 'fas fa-user' },
+      { label: 'Dead Agent Users', href: '/user_details/agent/dead', icon: 'fa fa-user-slash' },
     ],
   },
   {
@@ -34,6 +35,8 @@ const sidebarLinks = [
   {
     section: 'CASH TRANSACTION',
     links: [
+      { label: 'Debit/Credit Entry (Super Admin)', href: '/ct/super_admin', icon: 'fas fa-angle-right' },
+      { label: 'Debit/Credit Entry (Admin)', href: '/ct/admin', icon: 'fas fa-angle-right' },
       { label: 'Debit/Credit Entry (Sub)', href: '/ct/sub', icon: 'fas fa-angle-right' },
       { label: 'Debit/Credit Entry (M)', href: '/ct/master', icon: 'fas fa-angle-right' },
       { label: 'Debit/Credit Entry (S)', href: '/ct/super', icon: 'fas fa-angle-right' },
@@ -45,6 +48,8 @@ const sidebarLinks = [
     section: 'LEDGER',
     links: [
       { label: 'My Ledger', href: '/ledger', icon: 'fas fa-angle-right' },
+      { label: 'All Super Admin Ledger', href: '/ledger/super_admin', icon: 'fas fa-angle-right' },
+      { label: 'All Admin Ledger', href: '/ledger/admin', icon: 'fas fa-angle-right' },
       { label: 'All Sub Ledger', href: '/ledger/sub', icon: 'fas fa-angle-right' },
       { label: 'All Master Ledger', href: '/ledger/master', icon: 'fas fa-angle-right' },
       { label: 'All Super Ledger', href: '/ledger/super', icon: 'fas fa-angle-right' },

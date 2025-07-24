@@ -1,7 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Layout from '../../../components/Layout';
 import Head from 'next/head';
 import Link from 'next/link';
+import { createPortal } from 'react-dom';
+
+function PortalDropdown({ show, anchorEl, children, dropdownRef }: { show: boolean; anchorEl: HTMLElement | null; children: React.ReactNode; dropdownRef: React.RefObject<HTMLDivElement> }) {
+  const [coords, setCoords] = React.useState({ top: 0, left: 0, width: 0 });
+  const [ready, setReady] = React.useState(false);
+  React.useEffect(() => {
+    if (show && anchorEl) {
+      const rect = anchorEl.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+      setReady(true);
+    } else {
+      setReady(false);
+    }
+  }, [show, anchorEl]);
+  if (!show || !ready) return null;
+  return createPortal(
+    <div
+      ref={dropdownRef}
+      className="custom-dropdown-menu"
+      style={{
+        position: 'absolute',
+        zIndex: 3000,
+        top: coords.top,
+        left: coords.left,
+        minWidth: coords.width,
+      }}
+    >
+      {children}
+    </div>,
+    document.body
+  );
+}
 
 export default function SuperAdminMasterPage() {
   const [superAdmins, setSuperAdmins] = useState<any[]>([]);
@@ -13,7 +49,9 @@ export default function SuperAdminMasterPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownAnchor, setDropdownAnchor] = useState<null | HTMLElement>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [parentInfo, setParentInfo] = useState<{ name: string; code: string; limit: number } | null>(null);
   const [limitModal, setLimitModal] = useState<{ open: boolean; user: any; type: 'deposit' | 'withdrawal' } | null>(null);
   const [limitAmount, setLimitAmount] = useState('');
@@ -109,20 +147,42 @@ export default function SuperAdminMasterPage() {
   useEffect(() => { setCurrentPage(1); }, [searchTerm]);
   useEffect(() => { setCurrentPage(1); }, [entriesPerPage]);
 
-  const toggleDropdown = (userId: string, e: React.MouseEvent) => {
+  const handleDropdownOpen = (userId: string, e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    setOpenDropdown(openDropdown === userId ? null : userId);
+    setOpenDropdownId(userId);
+    setDropdownAnchor(e.currentTarget);
   };
+  const handleDropdownClose = () => {
+    setOpenDropdownId(null);
+    setDropdownAnchor(null);
+  };
+
   useEffect(() => {
-    const handleClickOutside = () => { setOpenDropdown(null); };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node) &&
+        dropdownAnchor &&
+        !(dropdownAnchor as any).contains(event.target)
+      ) {
+        handleDropdownClose();
+      }
+    }
+    if (openDropdownId) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdownId, dropdownAnchor]);
 
   const handleDropdownAction = async (action: string, user: any, e?: React.MouseEvent) => {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    setOpenDropdown(null);
+    handleDropdownClose();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (user.parentId) {
       try {
         const res = await fetch(`/api/users/${user.parentId}`);
@@ -146,10 +206,35 @@ export default function SuperAdminMasterPage() {
       case 'edit':
         window.location.href = `/user_details/super_admin/${user.id}/edit`;
         break;
-      case 'active': handleStatusUpdate(true, [user.id]); break;
-      case 'inactive': handleStatusUpdate(false, [user.id]); break;
-      case 'statement': window.location.href = `/user_details/statement?userId=${user.id}`; break;
-      default: break;
+      case 'active':
+        handleStatusUpdate(true, [user.id]);
+        break;
+      case 'inactive':
+        handleStatusUpdate(false, [user.id]);
+        break;
+      case 'statement':
+        window.location.href = `/user_details/statement?userId=${user.id}`;
+        break;
+      case 'deposit':
+        handleOpenLimitModal(user, 'deposit');
+        break;
+      case 'withdrawal':
+        handleOpenLimitModal(user, 'withdrawal');
+        break;
+      case 'downline':
+        window.location.href = `/user_details/downline?userId=${user.id}`;
+        break;
+      case 'changePassword':
+        window.location.href = `/changePassword?userId=${user.id}`;
+        break;
+      case 'sendSMS':
+        alert('Send Login Details (SMS)');
+        break;
+      case 'sendDevice':
+        alert('Send Login Details (Device)');
+        break;
+      default:
+        break;
     }
   };
 
@@ -354,7 +439,7 @@ export default function SuperAdminMasterPage() {
                             </label>
                           </div>
                         </div>
-                        <table className="table table-bordered table-striped">
+                        <table className="table table-bordered table-striped" style={{ width: '100%', tableLayout: 'fixed' }}>
                           <thead>
                             <tr>
                               <th><div style={{ textAlign: 'center' }}><input type="checkbox" checked={selectedUsers.length === paginatedSuperAdmins.length && paginatedSuperAdmins.length > 0} onChange={(e) => handleSelectAll(e.target.checked)} /></div></th>
@@ -377,20 +462,23 @@ export default function SuperAdminMasterPage() {
                                 <td><input type="checkbox" checked={selectedUsers.includes(user.id)} onChange={(e) => handleUserSelect(user.id, e.target.checked)} /></td>
                                 <td>
                                   <div className="dropdown">
-                                    <button className="btn btn-link btn-sm p-0" onClick={(e) => toggleDropdown(user.id, e)}>{idx + 1} <i className="fas fa-chevron-down"></i></button>
-                                    {openDropdown === user.id && (
-                                      <div className="dropdown-menu show" style={{ position: 'absolute', zIndex: 1000 }}>
-                                        <button className="dropdown-item" onClick={(e) => handleDropdownAction('edit', user, e)}>Edit</button>
-                                        <button className="dropdown-item" onClick={(e) => handleDropdownAction(user.isActive ? 'inactive' : 'active', user, e)}>{user.isActive ? 'Deactivate' : 'Activate'}</button>
-                                        <button className="dropdown-item" onClick={() => window.location.href = `/user_details/statement?userId=${user.id}`}>Statement</button>
-                                        <button className="dropdown-item" onClick={() => handleOpenLimitModal(user, 'deposit')} disabled={!user.parentId}>Deposit</button>
-                                        <button className="dropdown-item" onClick={() => handleOpenLimitModal(user, 'withdrawal')} disabled={!user.parentId}>Withdraw</button>
-                                        <button className="dropdown-item" onClick={() => window.location.href = `/user_details/downline?userId=${user.id}`}>Downline</button>
-                                        <button className="dropdown-item" onClick={() => window.location.href = `/changePassword?userId=${user.id}`}>Change Password</button>
-                                        <button className="dropdown-item" onClick={() => alert('Send Login Details (SMS)')}>Send Login Details (SMS)</button>
-                                        <button className="dropdown-item" onClick={() => alert('Send Login Details (Device)')}>Send Login Details (Device)</button>
-                                      </div>
-                                    )}
+                                    <button
+                                      className="btn btn-link btn-sm p-0"
+                                      onClick={(e) => handleDropdownOpen(user.id, e)}
+                                    >
+                                      {idx + 1} <i className="fas fa-chevron-down"></i>
+                                    </button>
+                                    <PortalDropdown show={openDropdownId === user.id} anchorEl={dropdownAnchor} dropdownRef={dropdownRef}>
+                                      <button className="dropdown-item" onClick={async (e) => await handleDropdownAction('edit', user, e)}>Edit</button>
+                                      <button className="dropdown-item" onClick={async (e) => handleDropdownAction(user.isActive ? 'inactive' : 'active', user, e)}>{user.isActive ? 'Deactivate' : 'Activate'}</button>
+                                      <button className="dropdown-item" onClick={() => handleDropdownAction('statement', user)}>Statement</button>
+                                      <button className="dropdown-item" onClick={async (e) => handleDropdownAction('deposit', user, e)} disabled={!user.parentId}>Deposit</button>
+                                      <button className="dropdown-item" onClick={async (e) => handleDropdownAction('withdrawal', user, e)} disabled={!user.parentId}>Withdraw</button>
+                                      <button className="dropdown-item" onClick={() => handleDropdownAction('downline', user)}>Downline</button>
+                                      <button className="dropdown-item" onClick={() => handleDropdownAction('changePassword', user)}>Change Password</button>
+                                      <button className="dropdown-item" onClick={() => handleDropdownAction('sendSMS', user)}>Send Login Details (SMS)</button>
+                                      <button className="dropdown-item" onClick={() => handleDropdownAction('sendDevice', user)}>Send Login Details (Device)</button>
+                                    </PortalDropdown>
                                   </div>
                                 </td>
                                 <td>{user.code || 'N/A'}</td>

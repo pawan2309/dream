@@ -48,6 +48,16 @@ export default function CashMasterPage() {
     }
   }, [form.master]);
 
+  // Filter function for profit/loss per match
+  const isProfitLossEntry = (entry: LedgerEntry & { transactionType?: string }) => {
+    const allowedTypes = ['WIN', 'LOSS', 'PNL_CREDIT', 'PNL_DEBIT'];
+    const allowedTransactionTypes = ['BET', 'BET_SETTLEMENT', 'P&L'];
+    return (
+      (allowedTypes.includes(entry.type)) ||
+      (entry.transactionType && allowedTransactionTypes.includes(entry.transactionType))
+    );
+  };
+
   const fetchMasters = async () => {
     try {
       const response = await fetch('/api/users?role=MASTER');
@@ -73,7 +83,8 @@ export default function CashMasterPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.ledger) {
-          setLedgerEntries(data.ledger);
+          // Filter for profit/loss entries only
+          setLedgerEntries(data.ledger.filter(isProfitLossEntry));
         } else {
           setLedgerEntries([]);
         }

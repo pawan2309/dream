@@ -81,6 +81,16 @@ export default function CashSubPage() {
     }
   }, [form.sub]);
 
+  // Filter function for profit/loss per match
+  const isProfitLossEntry = (entry: any) => {
+    const allowedTypes = ['WIN', 'LOSS', 'PNL_CREDIT', 'PNL_DEBIT'];
+    const allowedTransactionTypes = ['BET', 'BET_SETTLEMENT', 'P&L'];
+    return (
+      (allowedTypes.includes(entry.type)) ||
+      (entry.transactionType && allowedTransactionTypes.includes(entry.transactionType))
+    );
+  };
+
   const fetchTransactions = async () => {
     if (!form.sub) return;
     setLoadingTransactions(true);
@@ -89,7 +99,8 @@ export default function CashSubPage() {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.ledger) {
-          setTransactions(data.ledger);
+          // Filter for profit/loss entries only
+          setTransactions(data.ledger.filter(isProfitLossEntry));
         } else {
           setTransactions([]);
         }

@@ -305,3 +305,98 @@ table {
     margin-left: 5px;
   }
 }
+
+@media (min-width: 711px) {
+  .table {
+    width: 100% !important;
+    table-layout: auto !important;
+  }
+  .table th, .table td {
+    white-space: nowrap;
+  }
+  /* Example for 11 columns: adjust as needed for your tables */
+  .table th:nth-child(1), .table td:nth-child(1) { width: 4%; }   /* Checkbox */
+  .table th:nth-child(2), .table td:nth-child(2) { width: 5%; }   /* # */
+  .table th:nth-child(3), .table td:nth-child(3) { width: 10%; }  /* CODE */
+  .table th:nth-child(4), .table td:nth-child(4) { width: 12%; }  /* Name */
+  .table th:nth-child(5), .table td:nth-child(5) { width: 12%; }  /* Mobile */
+  .table th:nth-child(6), .table td:nth-child(6) { width: 10%; }  /* Password */
+  .table th:nth-child(7), .table td:nth-child(7) { width: 12%; }  /* Limit */
+  .table th:nth-child(8), .table td:nth-child(8) { width: 8%; }   /* Match */
+  .table th:nth-child(9), .table td:nth-child(9) { width: 8%; }   /* Session */
+  .table th:nth-child(10), .table td:nth-child(10) { width: 8%; } /* Share */
+  .table th:nth-child(11), .table td:nth-child(11) { width: 11%; }/* Status */
+}
+
+/* Reduce font size globally except sidebar */
+.content-wrapper, .main-header, .main-footer, .content, .container-fluid, .card, .table, .login-page, .login-box, .login-logo, .card-body, .dropdown-menu, .dropdown-item, .user-action-grid, .user-action-grid .btn, .breadcrumb, .form-control, .input-group, .input-group-text, .modal-content, .modal-header, .modal-body, .modal-footer, .small-box, .small-box-footer, .inner, .icon, .brand-text, .profile-user, .profile-username, .profile-user-info, .profile-user-info-list, .profile-user-info-list li, .profile-user-info-list span, .profile-user-info-list strong, .profile-user-info-list b, .profile-user-info-list i, .profile-user-info-list .badge, .profile-user-info-list .btn, .profile-user-info-list .form-control, .profile-user-info-list .input-group, .profile-user-info-list .input-group-text, .profile-user-info-list .modal-content, .profile-user-info-list .modal-header, .profile-user-info-list .modal-body, .profile-user-info-list .modal-footer {
+  font-size: 13px !important;
+}
+
+/* Exclude sidebar and its children from font-size reduction */
+.main-sidebar, .nav-sidebar, .sidebar, .nav-header, .brand-link, .main-sidebar *, .nav-sidebar *, .sidebar *, .nav-header *, .brand-link * {
+  font-size: initial !important;
+}
+
+h1 {
+  margin-bottom: 10px !important;
+}
+
+.content-header {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.content {
+  padding-top: 10px !important;
+}
+
+.custom-dropdown-menu {
+  background: #fff;
+  border: 1.5px solid #222;
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.18), 0 1.5px 4px rgba(0,0,0,0.12);
+  min-width: 160px;
+  padding: 6px 0;
+  z-index: 3000;
+}
+
+.custom-dropdown-menu .dropdown-item {
+  color: #222;
+  font-weight: 500;
+  font-size: 1.05rem;
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.custom-dropdown-menu .dropdown-item:hover,
+.custom-dropdown-menu .dropdown-item:focus {
+  background: #222;
+  color: #fff;
+  outline: none;
+}
+
+.table {
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto;
+}
+
+.table-responsive {
+  width: 100% !important;
+  overflow-x: auto;
+}
+
+.card-body {
+  width: 100%;
+  padding: 1rem;
+}
+
+/* Add 5px gap between adjacent buttons */
+.btn + .btn {
+  margin-left: 5px;
+}
