@@ -1,91 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-
-// ===================== Sidebar Navigation Links =====================
-const sidebarLinks = [
-  {
-    section: 'USER DETAILS',
-    links: [
-      { label: 'Super Admin Master', href: '/user_details/super_admin', icon: 'fas fa-user-tie' },
-      { label: 'Admin Master', href: '/user_details/admin', icon: 'fas fa-user-shield' },
-      { label: 'Sub Agent Master', href: '/user_details/sub', icon: 'fas fa-chess-rook' },
-      { label: 'MasterAgent Master', href: '/user_details/master', icon: 'fas fa-crown' },
-      { label: 'SuperAgent Master', href: '/user_details/super', icon: 'fas fa-user-tie' },
-      { label: 'Agent Master', href: '/user_details/agent', icon: 'fas fa-user-shield' },
-      { label: 'Client Master', href: '/user_details/client', icon: 'fas fa-user' },
-      { label: 'Dead Agent Users', href: '/user_details/agent/dead', icon: 'fa fa-user-slash' },
-    ],
-  },
-  {
-    section: 'GAMES',
-    links: [
-      { label: 'InPlay Game', href: '/game/inPlay', icon: 'fas fa-play' },
-      { label: 'Complete Game', href: '/game/completeGame', icon: 'far fa-stop-circle' },
-    ],
-  },
-  {
-    section: 'Casino',
-    links: [
-      { label: 'Live Casino Position', href: '#', icon: 'fas fa-chart-line' },
-      { label: 'Casino Details', href: '#', icon: 'fas fa-wallet' },
-      { label: 'Int. Casino Details', href: '#', icon: 'fas fa-chart-line' },
-    ],
-  },
-  {
-    section: 'CASH TRANSACTION',
-    links: [
-      { label: 'Debit/Credit Entry (Super Admin)', href: '/ct/super_admin', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (Admin)', href: '/ct/admin', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (Sub)', href: '/ct/sub', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (M)', href: '/ct/master', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (S)', href: '/ct/super', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (A)', href: '/ct/agent', icon: 'fas fa-angle-right' },
-      { label: 'Debit/Credit Entry (C)', href: '/ct/client', icon: 'fas fa-angle-right' },
-    ],
-  },
-  {
-    section: 'LEDGER',
-    links: [
-      { label: 'My Ledger', href: '/ledger', icon: 'fas fa-angle-right' },
-      { label: 'All Super Admin Ledger', href: '/ledger/super_admin', icon: 'fas fa-angle-right' },
-      { label: 'All Admin Ledger', href: '/ledger/admin', icon: 'fas fa-angle-right' },
-      { label: 'All Sub Ledger', href: '/ledger/sub', icon: 'fas fa-angle-right' },
-      { label: 'All Master Ledger', href: '/ledger/master', icon: 'fas fa-angle-right' },
-      { label: 'All Super Ledger', href: '/ledger/super', icon: 'fas fa-angle-right' },
-      { label: 'All Agent Ledger', href: '/ledger/agent', icon: 'fas fa-angle-right' },
-      { label: 'All Client Ledger', href: '/ledger/client', icon: 'fas fa-angle-right' },
-      { label: 'Client Plus/Minus', href: '/ledger/client/pm', icon: 'fas fa-angle-right' },
-    ],
-  },
-  {
-    section: 'COMMISSIONS',
-    links: [
-      { label: 'Commission Dashboard', href: '/commissions', icon: 'fas fa-coins' },
-    ],
-  },
-  {
-    section: 'OLD DATA',
-    links: [
-      { label: 'Old Ledger', href: '#', icon: 'fas fa-angle-right' },
-      { label: 'Old Game Data', href: '#', icon: 'far fa-stop-circle' },
-      { label: 'Old Casino Data', href: '#', icon: 'fas fa-angle-right' },
-    ],
-  },
-
-  {
-    section: 'Login Reports',
-    links: [
-      { label: 'All Login Reports', href: '/reports/login-reports', icon: 'fas fa-clipboard-list' },
-      { label: 'Boss Login Reports', href: '/reports/login-reports?role=BOSS', icon: 'fas fa-clipboard-list' },
-      { label: 'Sub Login Reports', href: '/reports/login-reports?role=SUB', icon: 'fas fa-clipboard-list' },
-      { label: 'Master Login Reports', href: '/reports/login-reports?role=MASTER', icon: 'fas fa-clipboard-list' },
-      { label: 'Super Login Reports', href: '/reports/login-reports?role=SUPER_AGENT', icon: 'fas fa-clipboard-list' },
-      { label: 'Agent Login Reports', href: '/reports/login-reports?role=AGENT', icon: 'fas fa-clipboard-list' },
-      { label: 'Clients Login Reports', href: '/reports/login-reports?role=USER', icon: 'fas fa-clipboard-list' },
-    ],
-  },
-];
+import { getRoleBasedNavigation } from '../lib/hierarchyUtils';
 
 // ===================== Layout Component =====================
 // This component provides the sidebar, navbar, footer, and main content wrapper
@@ -93,13 +9,12 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   
   // -------- Sidebar Section Expand/Collapse State --------
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set([
-    'USER DETAILS', 'GAMES', 'Casino', 'CASH TRANSACTION', 'LEDGER', 'COMMISSIONS', 'OLD DATA', 'Login Reports'
-  ]));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   
   // -------- User State --------
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sidebarLinks, setSidebarLinks] = useState<any>({});
 
   // -------- Toggle Sidebar Section --------
   const toggleSection = (sectionName: string) => {
@@ -120,7 +35,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     setSidebarCollapsed(isCollapsed);
   }, []);
 
-  // -------- Get User Data on Mount --------
+  // -------- Get User Data and Role-Based Navigation on Mount --------
   useEffect(() => {
     const getUserData = async () => {
       try {
@@ -128,6 +43,13 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         const data = await res.json();
         if (data.valid && data.user) {
           setUser(data.user);
+          
+          // Get role-based navigation
+          const navigation = getRoleBasedNavigation(data.user.role);
+          setSidebarLinks(navigation);
+          
+          // Expand all sections by default
+          setExpandedSections(new Set(Object.keys(navigation)));
         } else {
           // Don't redirect here, let individual pages handle session validation
           // Session invalid in Layout, but not redirecting
@@ -143,84 +65,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // -------- Handle Navigation State --------
   useEffect(() => {
-    // Prevent default browser behavior for navigation
-    // (Removed beforeunload handler to prevent unwanted confirmation dialog)
-  }, [router.asPath]);
-
-  // -------- Preserve Scroll Position on Navigation --------
-  useEffect(() => {
     const handleRouteChangeStart = () => {
-      // Store current scroll position before navigation
-      const currentScroll = window.scrollY;
-      sessionStorage.setItem('scrollPosition', currentScroll.toString());
-      sessionStorage.setItem('scrollTimestamp', Date.now().toString());
-      
-      // Also store the current navbar state
-      sessionStorage.setItem('navbarState', JSON.stringify({
-        sidebarCollapsed: sidebarCollapsed
-      }));
-
-      // Prevent any scroll reset during navigation
-      const preventScrollReset = () => {
-        if (currentScroll > 0) {
-          window.scrollTo(0, currentScroll);
-        }
-      };
-
-      // Multiple attempts to prevent scroll reset
-      setTimeout(preventScrollReset, 0);
-      setTimeout(preventScrollReset, 10);
-      setTimeout(preventScrollReset, 50);
+      // Save current scroll position
+      sessionStorage.setItem('scrollPosition', window.scrollY.toString());
     };
 
     const handleRouteChangeComplete = () => {
-      // Prevent immediate scroll to top
-      const preventScrollToTop = () => {
+      // Restore scroll position after a short delay
+      const preventScrollReset = () => {
         const savedPosition = sessionStorage.getItem('scrollPosition');
         if (savedPosition) {
-          const targetPosition = parseInt(savedPosition);
-          if (targetPosition > 0) {
-            // Force scroll to saved position
-            window.scrollTo(0, targetPosition);
-            return true;
-          }
+          window.scrollTo(0, parseInt(savedPosition));
+          sessionStorage.removeItem('scrollPosition');
         }
-        return false;
       };
-
-      // Try to prevent scroll to top immediately
-      if (!preventScrollToTop()) {
-        // If no saved position, allow normal behavior
-        return;
-      }
-
-      // Restore scroll position after navigation with multiple attempts
-      const savedPosition = sessionStorage.getItem('scrollPosition');
-      const savedTimestamp = sessionStorage.getItem('scrollTimestamp');
       
-      if (savedPosition && savedTimestamp) {
-        const targetPosition = parseInt(savedPosition);
-        const timestamp = parseInt(savedTimestamp);
-        const timeDiff = Date.now() - timestamp;
-        
-        // Only restore if the navigation happened within the last 5 seconds
-        if (timeDiff < 5000) {
-          const restoreScroll = () => {
-            // Use requestAnimationFrame for smooth restoration
-            requestAnimationFrame(() => {
-              window.scrollTo(0, targetPosition);
-            });
-          };
-          
-          // Multiple delayed attempts to handle AdminLTE interference
-          setTimeout(restoreScroll, 10);
-          setTimeout(restoreScroll, 50);
-          setTimeout(restoreScroll, 100);
-          setTimeout(restoreScroll, 200);
-          setTimeout(restoreScroll, 500);
-          setTimeout(restoreScroll, 1000);
-        }
-      }
+      setTimeout(preventScrollReset, 5);
       
       // Restore navbar state
       const savedNavbarState = sessionStorage.getItem('navbarState');
@@ -276,134 +136,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     });
   };
 
-  // -------- Handle Scroll Events --------
-  useEffect(() => {
-    const handleScroll = () => {
-      // Ensure navbar stays fixed during scroll
-      const navbar = document.querySelector('.main-header') as HTMLElement;
-      if (navbar) {
-        navbar.style.position = 'fixed';
-        navbar.style.top = '0';
-        navbar.style.left = '0';
-        navbar.style.right = '0';
-        navbar.style.zIndex = '1030';
-        navbar.style.backgroundColor = 'white';
-        navbar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-      }
-    };
-
-    // Force navbar to stay fixed on mount and during any changes
-    const forceNavbarFixed = () => {
-      // Try multiple selectors to find the navbar
-      const navbar = document.getElementById('fixed-navbar') || 
-                    document.querySelector('.main-header') || 
-                    document.querySelector('nav.main-header') as HTMLElement;
-      
-      if (navbar) {
-        // Force all critical styles
-        navbar.style.position = 'fixed';
-        navbar.style.top = '0';
-        navbar.style.left = '0';
-        navbar.style.right = '0';
-        navbar.style.zIndex = '1030';
-        navbar.style.backgroundColor = 'white';
-        navbar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-        navbar.style.marginTop = '0';
-        navbar.style.marginBottom = '0';
-        navbar.style.transform = 'none';
-        navbar.style.transition = 'none';
-        navbar.style.willChange = 'auto';
-        
-        // Also set as CSS custom property for extra enforcement
-        navbar.style.setProperty('--navbar-fixed', 'true');
-        navbar.style.setProperty('--navbar-top', '0px');
-        navbar.style.setProperty('--navbar-z-index', '1030');
-      }
-    };
-
-    // Override window.scrollTo to prevent unwanted scroll resets
-    const originalScrollTo = window.scrollTo;
-    (window as any).scrollTo = function(options: any, y?: number) {
-      // Only allow scroll to top if it's our own scroll restoration
-      if (typeof options === 'object' && options.top === 0) {
-        const savedPosition = sessionStorage.getItem('scrollPosition');
-        if (savedPosition) {
-          const targetPosition = parseInt(savedPosition);
-          if (targetPosition > 0) {
-            // Don't scroll to top if we have a saved position
-            return;
-          }
-        }
-      }
-      return originalScrollTo.call(this, options, y || 0);
-    };
-
-    // Force navbar fixed immediately
-    forceNavbarFixed();
-
-    // Set up interval to continuously ensure navbar stays fixed
-    const interval = setInterval(forceNavbarFixed, 50); // More frequent checks
-    
-    // Also set up a more aggressive interval for critical moments
-    const criticalInterval = setInterval(() => {
-      const navbar = document.getElementById('fixed-navbar') as HTMLElement;
-      if (navbar && navbar.style.position !== 'fixed') {
-        forceNavbarFixed();
-      }
-    }, 10);
-
-    // Watch for DOM changes that might affect navbar
-    const observer = new MutationObserver(() => {
-      forceNavbarFixed();
-    });
-
-    // Observe the entire document for changes
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class']
-    });
-
-    // Prevent any scroll events from affecting navbar position
-    const preventNavbarScroll = (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      forceNavbarFixed();
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    window.addEventListener('resize', forceNavbarFixed);
-    
-    // Add more event listeners to catch any navbar movement
-    document.addEventListener('scroll', preventNavbarScroll, { capture: true });
-    document.addEventListener('wheel', preventNavbarScroll, { capture: true });
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', forceNavbarFixed);
-      document.removeEventListener('scroll', preventNavbarScroll, { capture: true });
-      document.removeEventListener('wheel', preventNavbarScroll, { capture: true });
-      clearInterval(interval);
-      clearInterval(criticalInterval);
-      observer.disconnect();
-      window.scrollTo = originalScrollTo;
-    };
-  }, []);
-
-  // Add after other useState declarations
+  // -------- Mobile Sidebar State --------
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  // Detect mobile screen size
+  // -------- Handle Mobile Detection --------
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768); // 768px breakpoint for mobile
-    window.addEventListener('resize', handleResize);
-    handleResize();
-    return () => window.removeEventListener('resize', handleResize);
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Close sidebar on route change (mobile only)
+  // -------- Close Mobile Sidebar on Route Change --------
   useEffect(() => {
     if (isMobile) setMobileSidebarOpen(false);
     // eslint-disable-next-line
@@ -480,61 +229,45 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             </li>
           </ul>
 
-          {/* Right navbar links (User Dropdown) */}
+          {/* Right navbar links */}
           <ul className="navbar-nav ml-auto">
             <li className="nav-item dropdown user-menu">
-              <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown" style={{
-                padding: 0,
-                background: 'none',
-                border: 'none',
-                boxShadow: 'none',
-                height: '50px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+              <a href="#" className="nav-link dropdown-toggle" data-toggle="dropdown" style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                padding: '0 15px',
+                color: '#fff',
+                textDecoration: 'none'
               }}>
                 <div style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: '50%',
+                  background: '#007bff',
+                  color: '#fff',
+                  fontSize: 16,
+                  fontWeight: 'bold',
                   display: 'flex',
                   alignItems: 'center',
-                  background: '#e0e0e0',
-                  color: '#222',
-                  borderRadius: 24,
-                  height: 40,
-                  padding: '15px',
-                  boxSizing: 'border-box',
-                  boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-                  minWidth: 120,
+                  justifyContent: 'center',
+                  marginRight: 10,
+                  textTransform: 'uppercase',
                 }}>
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: '#007bff',
-                    color: '#fff',
-                    fontSize: 18,
-                    fontWeight: 'bold',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12,
-                    textTransform: 'uppercase',
-                  }}>
-                    {((user?.name || user?.username || '')
-                      .split(' ')
-                      .map((n: string) => n[0])
-                      .join('')
-                      .substring(0, 2)) || 'U'}
-                  </div>
-                  <span style={{
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    fontWeight: 600,
-                    fontSize: 18,
-                    display: 'flex',
-                    alignItems: 'center',
-                  }}>{user?.name || user?.username || 'User'}</span>
+                  {((user?.name || user?.username || '')
+                    .split(' ')
+                    .map((n: string) => n[0])
+                    .join('')
+                    .substring(0, 2)) || 'U'}
                 </div>
+                <span style={{
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  fontWeight: 600,
+                  fontSize: 18,
+                  display: 'flex',
+                  alignItems: 'center',
+                }}>{user?.name || user?.username || 'User'}</span>
               </a>
               <ul className="dropdown-menu dropdown-menu-lg dropdown-menu-right" style={{ minWidth: 260, padding: 0, borderRadius: 12, boxShadow: '0 4px 24px rgba(0,0,0,0.12)' }}>
                 <li className="user-header" style={{ background: '#e0e0e0', color: '#222', borderTopLeftRadius: 12, borderTopRightRadius: 12, padding: 15, textAlign: 'center' }}>
@@ -560,7 +293,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                       .join('')
                       .substring(0, 2)) || 'U'}
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: 18, marginBottom: 4 }}>{user?.name || user?.username || 'User'}</div>
                   <div style={{ fontSize: 13, color: '#555', marginBottom: 2 }}>ID: {user?.username || user?.id || '-'}</div>
                   <div style={{ fontSize: 13, color: '#555' }}>Role: {user?.role || '-'}</div>
                 </li>
@@ -641,15 +373,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto', marginLeft: 0, paddingLeft: 0 }}>
                   <nav>
                     <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                      {sidebarLinks.map(section => {
-                        const isExpanded = expandedSections.has(section.section);
+                      {Object.entries(sidebarLinks).map(([section, links]) => {
+                        const isExpanded = expandedSections.has(section);
                         return (
-                          <React.Fragment key={section.section}>
-                            <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section.section)}>
-                              {section.section}
+                          <React.Fragment key={section}>
+                            <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section)}>
+                              {section}
                               <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} float-right`} style={{ fontSize: '12px', marginTop: '3px' }}></i>
                             </li>
-                            {isExpanded && section.links.map(link => (
+                            {isExpanded && (links as any[]).map((link: any) => (
                               <li className="nav-item" key={link.label}>
                                 <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}
                                   onClick={() => setMobileSidebarOpen(false)}
@@ -727,15 +459,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <div className="sidebar" style={{ marginTop: '0', flex: 1, overflowY: 'auto', marginLeft: 0, paddingLeft: 0 }}>
               <nav>
                 <ul className="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                  {sidebarLinks.map(section => {
-                    const isExpanded = expandedSections.has(section.section);
+                  {Object.entries(sidebarLinks).map(([section, links]) => {
+                    const isExpanded = expandedSections.has(section);
                     return (
-                      <React.Fragment key={section.section}>
-                        <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section.section)}>
-                          {section.section}
+                      <React.Fragment key={section}>
+                        <li className="nav-header" style={{ cursor: 'pointer' }} onClick={() => toggleSection(section)}>
+                          {section}
                           <i className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} float-right`} style={{ fontSize: '12px', marginTop: '3px' }}></i>
                         </li>
-                        {isExpanded && section.links.map(link => (
+                        {isExpanded && (links as any[]).map((link: any) => (
                           <li className="nav-item" key={link.label}>
                             <Link href={link.href} className={`nav-link ${router.pathname === link.href ? 'active' : ''}`} style={{ padding: '8px 15px', fontSize: '13px' }}>
                               <i className={`nav-icon ${link.icon}`} style={{ fontSize: '12px', marginRight: '8px' }}></i>
@@ -778,6 +510,31 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <aside className="control-sidebar control-sidebar-dark">
           {/* Control sidebar content goes here */}
         </aside>
+
+        {/* ===================== Scroll to Top Button ===================== */}
+        <button
+          onClick={scrollToTop}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '20px',
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            fontSize: '20px',
+            cursor: 'pointer',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+          }}
+        >
+          ↑
+        </button>
       </div>
     </div>
   );

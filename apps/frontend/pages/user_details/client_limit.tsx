@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
+import { useRoleAccess } from '../../lib/hooks/useRoleAccess';
 
 interface User {
   id: string;
@@ -9,6 +10,16 @@ interface User {
   creditLimit: number;
   exposure: number;
   isActive: boolean;
+  role: string;
+  hierarchyLevel: number;
+  canManage: boolean;
+  parent?: {
+    id: string;
+    username: string;
+    name: string;
+    code: string;
+    role: string;
+  };
 }
 
 export default function ClientLimitUpdate() {
@@ -19,25 +30,43 @@ export default function ClientLimitUpdate() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const router = useRouter();
+  
+  // Use role-based access control
+  const { user, canAccess, loading: roleLoading, error: roleError } = useRoleAccess();
 
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    // Check if user can access client management
+    if (!roleLoading && user && !canAccess('client_management')) {
+      alert('Access denied: You do not have permission to manage clients.');
+      router.push('/');
+      return;
+    }
+
+    if (!roleLoading && user) {
+      fetchUsers();
+    }
+  }, [roleLoading, user, canAccess, router]);
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users?role=USER');
+      setLoading(true);
+      // Use the new filtered API that respects role hierarchy
+      const response = await fetch('/api/users/filtered?role=USER');
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.users) {
           setUsers(data.users);
-        } else if (Array.isArray(data)) {
-          setUsers(data);
         } else {
           setUsers([]);
         }
       } else {
-        setUsers([]);
+        const errorData = await response.json();
+        if (response.status === 403) {
+          alert(`Access denied: ${errorData.message}`);
+          router.push('/');
+        } else {
+          setUsers([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -94,6 +123,78 @@ export default function ClientLimitUpdate() {
     setCurrentPage(page);
   };
 
+  // Show loading state while checking role access
+  if (roleLoading) {
+    return (
+      <Layout>
+        <div className="container-fluid">
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-body text-center">
+                  <div className="spinner-border" role="status">
+                    <span className="sr-only">Loading...</span>
+                  </div>
+                  <p className="mt-2">Checking permissions...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show error state if role access failed
+  if (roleError) {
+    return (
+      <Layout>
+        <div className="container-fluid">
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-body text-center">
+                  <div className="alert alert-danger">
+                    <h5>Access Error</h5>
+                    <p>{roleError}</p>
+                    <button className="btn btn-primary" onClick={() => window.location.reload()}>
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  // Show access denied if user cannot manage clients
+  if (!user || !canAccess('client_management')) {
+    return (
+      <Layout>
+        <div className="container-fluid">
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-body text-center">
+                  <div className="alert alert-warning">
+                    <h5>Access Denied</h5>
+                    <p>You do not have permission to manage clients.</p>
+                    <button className="btn btn-primary" onClick={() => router.push('/')}>
+                      Go to Dashboard
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (loading) {
     return (
       <Layout>
@@ -122,9 +223,14 @@ export default function ClientLimitUpdate() {
             <div className="card card-indigo">
               <div className="card-header">
                 <h4>Client Coin Details</h4>
-                <a href="/user_details/client" className="btn btn-secondary">
-                  <i className="fa fa-arrow-left"></i> Back to Clients
-                </a>
+                <div>
+                  <span className="badge badge-info mr-2">
+                    Role: {user?.role}
+                  </span>
+                  <a href="/user_details/client" className="btn btn-secondary">
+                    <i className="fa fa-arrow-left"></i> Back to Clients
+                  </a>
+                </div>
               </div>
               <div className="card-body">
                 {/* Search Bar */}
@@ -158,6 +264,7 @@ export default function ClientLimitUpdate() {
                       <tr>
                         <th>SNo</th>
                         <th>Client Name</th>
+                        <th>Parent</th>
                         <th>Limit</th>
                         <th>Enter Limit</th>
                         <th>Action</th>
@@ -167,7 +274,22 @@ export default function ClientLimitUpdate() {
                       {currentUsers.map((user, index) => (
                         <tr key={user.id}>
                           <td>{startIndex + index + 1}</td>
-                          <td>{user.username} {user.name}</td>
+                          <td>
+                            {user.username} {user.name}
+                            <br />
+                            <small className="text-muted">ID: {user.id}</small>
+                          </td>
+                          <td>
+                            {user.parent ? (
+                              <span>
+                                {user.parent.code} {user.parent.name}
+                                <br />
+                                <small className="text-muted">({user.parent.role})</small>
+                              </span>
+                            ) : (
+                              <span className="text-muted">No parent</span>
+                            )}
+                          </td>
                           <td>{user.creditLimit?.toFixed(2) || '0.00'}</td>
                           <td className="col-lg-4" style={{ minWidth: '120px' }}>
                             <input
@@ -190,7 +312,7 @@ export default function ClientLimitUpdate() {
                                   alert('Please enter a valid amount');
                                 }
                               }}
-                              disabled={updating === user.id}
+                              disabled={updating === user.id || !user.canManage}
                             >
                               {updating === user.id ? 'Updating...' : 'Add'}
                             </button>
@@ -205,10 +327,15 @@ export default function ClientLimitUpdate() {
                                   alert('Please enter a valid amount');
                                 }
                               }}
-                              disabled={updating === user.id}
+                              disabled={updating === user.id || !user.canManage}
                             >
                               {updating === user.id ? 'Updating...' : 'Minus'}
                             </button>
+                            {!user.canManage && (
+                              <small className="text-muted d-block mt-1">
+                                No permission to manage this user
+                              </small>
+                            )}
                           </td>
                         </tr>
                       ))}

@@ -19,25 +19,15 @@ self.__BUILD_MANIFEST = {
       "static/chunks/main.js",
       "static/chunks/pages/_error.js"
     ],
-    "/user_details/admin": [
+    "/login": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
-      "static/chunks/pages/user_details/admin.js"
-    ],
-    "/user_details/agent": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/user_details/agent.js"
+      "static/chunks/pages/login.js"
     ],
     "/user_details/agent/dead": [
       "static/chunks/webpack.js",
       "static/chunks/main.js",
       "static/chunks/pages/user_details/agent/dead.js"
-    ],
-    "/user_details/super_admin": [
-      "static/chunks/webpack.js",
-      "static/chunks/main.js",
-      "static/chunks/pages/user_details/super_admin.js"
     ]
   },
   "ampFirstPages": []
